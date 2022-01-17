@@ -1,0 +1,15 @@
+*zz_useless*
+
+results*
+post_analysis
+
+simulate_rgcr
+eval_prob_formula
+eval_prob_simulation
+simulate_GCR_variance
+
+commands*
+zz_useless.cpp
+*ipynb*
+
+.DS_Store
