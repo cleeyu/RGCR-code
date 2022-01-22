@@ -12,7 +12,7 @@ class RandomClustering {
 	  : _g(g), _mx_nid(g->GetMxNId()), _method(method + '-' + w_opt) {
 		check_graph_validity(g);
 		parse_alg_param(method);
-		load_node_weight(GRAPH_CORE_PATH + path_graph_name + "-node_meta.txt", w_opt);
+		load_node_weight(DATA_PATH + path_graph_name + "-node_meta.txt", w_opt);
 	}
 
 	const std::string& method() const {
