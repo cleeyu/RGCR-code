@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
   usage_msg += " -w clustering_node_w_opt[uniform]";
   usage_msg += " -n n_samples[100]";
   usage_msg += " -i run_id[0]";
-  usage_msg += " -t(if using total randomization [false])";
+  usage_msg += " -t(if using complete randomization [false])";
   usage_msg += " -s(if using stratified clustering sampling [false])";
 
   // Default run parameters.
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
   std::string clustering_node_w_opt = "uniform";
   int n_samples = 100;
   int run_id = 0;
-  bool use_total_randomization = false;
+  bool use_complete_randomization = false;
   bool use_stratified_sampling = false;
 
   extern char *optarg;
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         run_id = atoi(optarg);
         break;
       case 't':
-        use_total_randomization = true;
+        use_complete_randomization = true;
         break;
       case 's':
         use_stratified_sampling = true;
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   }
 
   std::cout << path_graph_name << ',' << clustering_method << ',' << clustering_node_w_opt << ',' << n_samples << ',' << run_id;
-  if (use_total_randomization) {
+  if (use_complete_randomization) {
     std::cout << ",total_randomization";
   }
   if (use_stratified_sampling) {
@@ -76,13 +76,13 @@ int main(int argc, char **argv) {
   RandomClustering random_clustering(g, path_graph_name, clustering_method, clustering_node_w_opt);
 
   if (use_stratified_sampling) {
-    rgcr.stratified_mixing_analysis(random_clustering, n_samples, use_total_randomization, run_id);
+    rgcr.stratified_mixing_analysis(random_clustering, n_samples, use_complete_randomization, run_id);
   } else {
-    rgcr.independent_mixing_analysis(random_clustering, n_samples, use_total_randomization, run_id);
+    rgcr.independent_mixing_analysis(random_clustering, n_samples, use_complete_randomization, run_id);
   }
 
     
-  // rgcr.independent_mixing_analysis_specified(random_clustering, {25, 50, 200, 400, 4000}, use_total_randomization, run_id);
+  // rgcr.independent_mixing_analysis_specified(random_clustering, {25, 50, 200, 400, 4000}, use_complete_randomization, run_id);
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;
   return 0;

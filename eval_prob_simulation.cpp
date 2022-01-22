@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
   usage_msg += " -c clustering_method[nbr_max-1]";
   usage_msg += " -w clustering_weight[uniform]";
   usage_msg += " -s file_suffix[3-0.txt]";
-  usage_msg += " -r use_total_rand[false]";
+  usage_msg += " -r use_complete_rand[false]";
   usage_msg += " -h estimator_type[Hajek]";
   usage_msg += " -n n_rounds[1]";
   usage_msg += " -a base_response[1]";
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
   std::string clustering_method = "nbr_max-1";
   std::string clustering_node_w_opt = "uniform";
   std::string file_suffix = "3-0.txt";
-  bool use_total_rand = false;
+  bool use_complete_rand = false;
   std::string est_type_str = "Hajek";
   int n_rounds = 1;
   double a = 1;
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
         file_suffix = optarg;
         break;
       case 'r':
-        use_total_rand = true;
+        use_complete_rand = true;
         break;
       case 'h':
         est_type_str = optarg;
@@ -88,8 +88,8 @@ int main(int argc, char **argv) {
   }
 
   std::string run_name = path_graph_name + ',' + clustering_method + '-' + clustering_node_w_opt + ',' + file_suffix + ',';
-  if (use_total_rand) {
-    run_name += "tot_randomization,";
+  if (use_complete_rand) {
+    run_name += "com_randomization,";
   } else {
     run_name += "ind_randomization,";
   }
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
   RandomClustering random_clustering(g, path_graph_name, clustering_method, clustering_node_w_opt);
-  rgcr.eval_expo_prob_simulation_stratified(random_clustering, n_rounds, use_total_rand, file_suffix, est_type_str, file_out);
+  rgcr.eval_expo_prob_simulation_stratified(random_clustering, n_rounds, use_complete_rand, file_suffix, est_type_str, file_out);
   file_out.close();
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;

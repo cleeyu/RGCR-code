@@ -47,9 +47,9 @@ class RGCR {
 		load_treatment_response(tau, is_additive);
 	}
 
-	void independent_mixing_analysis_specified(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, bool use_total_rand, int run_id = 0) {
+	void independent_mixing_analysis_specified(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, bool use_complete_rand, int run_id = 0) {
 		// TODO: merge this function with the next one.
-		get_output_directory(use_total_rand, false, true);
+		get_output_directory(use_complete_rand, false, true);
 		_clustering_method = random_clustering.method();
 
 		if (mixing_levels.size() == 0) {
@@ -66,8 +66,8 @@ class RGCR {
 		for (int sample_i = 1; sample_i <= mixing_levels.back(); sample_i++) {
 			VecFlt partition;
 			random_clustering.gen_partition(partition);
-			if (use_total_rand) {
-				analyze_partition_tot(partition);
+			if (use_complete_rand) {
+				analyze_partition_complete(partition);
 			} else {
 				analyze_partition_ind(partition);
 			}
@@ -116,8 +116,8 @@ class RGCR {
 		}
 	}
 
-	void independent_mixing_analysis(RandomClustering& random_clustering, int n_samples, bool use_total_rand, int run_id = 0) {
-		get_output_directory(use_total_rand, false);
+	void independent_mixing_analysis(RandomClustering& random_clustering, int n_samples, bool use_complete_rand, int run_id = 0) {
+		get_output_directory(use_complete_rand, false);
 		_clustering_method = random_clustering.method();
 
 		std::vector<int> mixing_levels;
@@ -132,8 +132,8 @@ class RGCR {
 		for (int sample_i = 1; sample_i <= n_samples; sample_i++) {
 			VecFlt partition;
 			random_clustering.gen_partition(partition);
-			if (use_total_rand) {
-				analyze_partition_tot(partition);
+			if (use_complete_rand) {
+				analyze_partition_complete(partition);
 			} else {
 				analyze_partition_ind(partition);
 			}
@@ -182,8 +182,8 @@ class RGCR {
 		}
 	}
 
-	void stratified_mixing_analysis(RandomClustering& random_clustering, int n_rounds, bool use_total_rand, int run_id = 0) {
-		get_output_directory(use_total_rand, true);
+	void stratified_mixing_analysis(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, int run_id = 0) {
+		get_output_directory(use_complete_rand, true);
 		_clustering_method = random_clustering.method();
 
 		std::vector<int> mixing_levels;
@@ -206,8 +206,8 @@ class RGCR {
 				}
 				VecFlt partition;
 				random_clustering.gen_partition(partition, i);
-				if (use_total_rand) {
-					analyze_partition_tot(partition, random_clustering.node_weight(i));
+				if (use_complete_rand) {
+					analyze_partition_complete(partition, random_clustering.node_weight(i));
 				} else {
 					analyze_partition_ind(partition, random_clustering.node_weight(i));
 				}
@@ -270,9 +270,9 @@ class RGCR {
 		for (int sample_i = 0; sample_i < n_samples; sample_i++) {
 			double hat_tau_1, hat_tau_2;
 			if (est_type == HT) {
-				simulate_HT(partition, false, hat_tau_1, hat_tau_2);	// use_total_rand=false
+				simulate_HT(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
 			} else {
-				simulate_Hajek(partition, false, hat_tau_1, hat_tau_2);	// use_total_rand=false
+				simulate_Hajek(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
 			}
 			sum_bias += hat_tau_1 + hat_tau_2 - 2 * tau_gt;
 			double SE_1 = (hat_tau_1 - tau_gt) * (hat_tau_1 - tau_gt);
@@ -293,8 +293,8 @@ class RGCR {
 		out << std::endl;
 	}
 
-	void eval_expo_prob_formula(const std::string& clustering_method, bool use_total_rand, const std::string& file_suffix, bool use_hajek=false, std::ostream& out = std::cout) {
-		get_output_directory(use_total_rand, true);
+	void eval_expo_prob_formula(const std::string& clustering_method, bool use_complete_rand, const std::string& file_suffix, bool use_hajek=false, std::ostream& out = std::cout) {
+		get_output_directory(use_complete_rand, true);
 		std::string file_prefix = _output_file_directory + "expo_prob/" + clustering_method;
 		load_expo_prob(file_prefix, file_suffix);
 		double var_1 = 0, var_2 = 0;
@@ -302,9 +302,9 @@ class RGCR {
 		out << var_1 << '\t' << var_2 << '\t' << var_1 + var_2 << std::endl;
 	}
 
-	void eval_expo_prob_simulation_stratified(RandomClustering& random_clustering, int n_rounds, bool use_total_rand, 
+	void eval_expo_prob_simulation_stratified(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, 
 		const std::string& file_suffix, const std::string& est_type_str, std::ostream& out = std::cout) {
-		get_output_directory(use_total_rand, true);
+		get_output_directory(use_complete_rand, true);
 		_clustering_method = random_clustering.method();
 		std::string file_prefix = _output_file_directory + "expo_prob/" + _clustering_method;
 		load_expo_prob(file_prefix, file_suffix);
@@ -334,9 +334,9 @@ class RGCR {
 				random_clustering.gen_partition(partition, i);
 				double hat_tau_1, hat_tau_2;
 				if (est_type == HT) {
-					simulate_HT(partition, use_total_rand, hat_tau_1, hat_tau_2);
+					simulate_HT(partition, use_complete_rand, hat_tau_1, hat_tau_2);
 				} else {
-					simulate_Hajek(partition, use_total_rand, hat_tau_1, hat_tau_2);
+					simulate_Hajek(partition, use_complete_rand, hat_tau_1, hat_tau_2);
 				}
 				double w_i = random_clustering.node_weight(i);
 				double SE_1 = (hat_tau_1 - tau_gt) * (hat_tau_1 - tau_gt);
@@ -510,10 +510,10 @@ class RGCR {
 		_mu1 = std::accumulate(_node_response_1.begin(), _node_response_1.end(), 0.0) / _mx_nid;
 	}
 
-	void get_output_directory(bool use_total_rand, bool use_stratified_sampling, bool specified=false) {
+	void get_output_directory(bool use_complete_rand, bool use_stratified_sampling, bool specified=false) {
 		_output_file_directory = "results/";
-		if (use_total_rand) {
-			_output_file_directory += "tot";
+		if (use_complete_rand) {
+			_output_file_directory += "com";
 		} else {
 			_output_file_directory += "ind";
 		}
@@ -712,13 +712,13 @@ class RGCR {
 		}
 	}
 
-	double compute_expo_prob_total_rand(const std::unordered_set<double>& adjacent_clusters, 
+	double compute_expo_prob_complete_rand(const std::unordered_set<double>& adjacent_clusters, 
 		const std::unordered_map<double, double>& pairs) const {
 		std::unordered_map<double, int> assignments;
-		return compute_expo_prob_total_rand(adjacent_clusters, pairs, assignments);
+		return compute_expo_prob_complete_rand(adjacent_clusters, pairs, assignments);
 	}
 
-	double compute_expo_prob_total_rand(const std::unordered_set<double>& adjacent_clusters, 
+	double compute_expo_prob_complete_rand(const std::unordered_set<double>& adjacent_clusters, 
 		const std::unordered_map<double, double>& pairs, 
 		std::unordered_map<double, int>& assignments) const {
 		assignments.clear();
@@ -735,7 +735,7 @@ class RGCR {
 		return std::pow(0.5, (assignments.size()+1)/2 );
 	}
 
-	void analyze_partition_tot(const VecFlt& partition, double partition_wt = 1) {
+	void analyze_partition_complete(const VecFlt& partition, double partition_wt = 1) {
 		// Step 0: populate the following data structures
 		// cluster_sz[f] is the size of cluster f (number of nodes).
 		std::unordered_map<double, int> cluster_sz;
@@ -750,7 +750,7 @@ class RGCR {
 			}
 		}
 
-		// Step 1: pair the clusters for total randomization.
+		// Step 1: pair the clusters for complete randomization.
 		std::unordered_map<double, double> pairs;
 		pair_clusters(cluster_sz, pairs);
 
@@ -761,7 +761,7 @@ class RGCR {
 		{
 		#pragma omp for reduction (+:bias_p)
 		for (int i = 0; i < _mx_nid; i++) {
-			expo_prob[i] = compute_expo_prob_total_rand(node_to_adjencent_clusters[i], pairs);
+			expo_prob[i] = compute_expo_prob_complete_rand(node_to_adjencent_clusters[i], pairs);
 			_sum_expo_prob[0][i] += expo_prob[i] * partition_wt;
 			if (expo_prob[i] == 0) {
 				bias_p += _node_response_1[i] - _node_response_0[i];
@@ -784,7 +784,7 @@ class RGCR {
 			variance_i += 2 * _node_response_0[i] * _node_response_1[i];
 
 			std::unordered_map<double, int> assignments;
-			compute_expo_prob_total_rand(node_to_adjencent_clusters[i], pairs, assignments);
+			compute_expo_prob_complete_rand(node_to_adjencent_clusters[i], pairs, assignments);
 			for (int j = 0; j < i; j++) {
 				if (expo_prob[j] == 0) continue;
 
@@ -982,7 +982,7 @@ class RGCR {
 		}
 	}
 
-	void assign_treatment_control(const VecFlt& partition, bool use_total_rand, std::unordered_map<double, int>& assignment, int priority_node=-1) const {
+	void assign_treatment_control(const VecFlt& partition, bool use_complete_rand, std::unordered_map<double, int>& assignment, int priority_node=-1) const {
 		// cluster_sz[f] is the size of cluster f (number of nodes).
 		std::unordered_map<double, int> cluster_sz;
 		for (int i = 0; i < _mx_nid; i++) {
@@ -991,7 +991,7 @@ class RGCR {
 		std::bernoulli_distribution bern_rv(0.5);
 		std::default_random_engine random_eng(rand());
 		assignment.clear();
-		if (use_total_rand) {
+		if (use_complete_rand) {
 			if (priority_node != -1) {
 				throw std::invalid_argument("Priority Node unsupported for complete randomization!"); 
 			}
@@ -1022,9 +1022,9 @@ class RGCR {
 		}
 	}
 
-	void simulate_Hajek(const VecFlt& partition, bool use_total_rand, double& hat_tau_1, double& hat_tau_2) const {
+	void simulate_Hajek(const VecFlt& partition, bool use_complete_rand, double& hat_tau_1, double& hat_tau_2) const {
 		std::unordered_map<double, int> assignment;
-		assign_treatment_control(partition, use_total_rand, assignment);
+		assign_treatment_control(partition, use_complete_rand, assignment);
 
 		double sum_inv_prob_0 = 0, sum_inv_prob_1 = 0;
 		double sum_inv_prob_response_0_1 = 0, sum_inv_prob_response_1_1 = 0;
@@ -1065,9 +1065,9 @@ class RGCR {
 		hat_tau_2 = hat_mu_1_2 - hat_mu_0_2;
 	}
 
-	void simulate_HT(const VecFlt& partition, bool use_total_rand, double& hat_tau_1, double& hat_tau_2) const {
+	void simulate_HT(const VecFlt& partition, bool use_complete_rand, double& hat_tau_1, double& hat_tau_2) const {
 		std::unordered_map<double, int> assignment;
-		assign_treatment_control(partition, use_total_rand, assignment);
+		assign_treatment_control(partition, use_complete_rand, assignment);
 
 		double sum_inv_prob_response_0_1 = 0, sum_inv_prob_response_1_1 = 0;
 		double sum_inv_prob_response_0_2 = 0, sum_inv_prob_response_1_2 = 0;

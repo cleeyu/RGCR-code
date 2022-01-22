@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   usage_msg += " -g path_graph_name[synthetic/small_world/SW-2D_32_1_PL-id]";
   usage_msg += " -c clustering_method[nbr_max-1-uniform]";
   usage_msg += " -s file_suffix[3-0.txt]";
-  usage_msg += " -r use_total_rand[false]";
+  usage_msg += " -r use_complete_rand[false]";
   usage_msg += " -h use_hajek[false]";
   usage_msg += " -a base_response[1]";
   usage_msg += " -b drift_std[0.5]";
@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
   std::string path_graph_name = "synthetic/small_world/SW-2D_32_1_PL-id";
   std::string clustering_method = "nbr_max-1-uniform";
   std::string file_suffix = "3-0.txt";
-  bool use_total_rand = false;
+  bool use_complete_rand = false;
   bool use_hajek = false;
   double a = 1;
   double b = 0.5;
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         file_suffix = optarg;
         break;
       case 'r':
-        use_total_rand = true;
+        use_complete_rand = true;
         break;
       case 'h':
         use_hajek = true;
@@ -73,8 +73,8 @@ int main(int argc, char **argv) {
   }
 
   std::string run_name = path_graph_name + ',' + clustering_method + ',' + file_suffix + ',';
-  if (use_total_rand) {
-    run_name += "tot_randomization,";
+  if (use_complete_rand) {
+    run_name += "com_randomization,";
   } else {
     run_name += "ind_randomization,";
   }
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
   }
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
-  rgcr.eval_expo_prob_formula(clustering_method, use_total_rand, file_suffix, use_hajek, file_out);
+  rgcr.eval_expo_prob_formula(clustering_method, use_complete_rand, file_suffix, use_hajek, file_out);
   file_out.close();
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;
