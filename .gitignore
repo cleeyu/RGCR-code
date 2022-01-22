@@ -12,4 +12,7 @@ commands*
 zz_useless.cpp
 *ipynb*
 
+*.ungraph
+
+
 .DS_Store
