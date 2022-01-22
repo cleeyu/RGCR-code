@@ -431,7 +431,7 @@ class RGCR {
 
 
 	void load_default_node_response(int response_opt, double tau, bool is_additive, bool multiply_deg=true) {
-		std::string response_file_name = "response/base_response/" + _path_graph_name + "/NodeResponse.txt";
+		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
 		load_vec_from_file(_node_response_0, response_file_name, response_opt, 0, _mx_nid);
 		if (multiply_deg) {
 			double avg_deg = 2.0 * _g->GetEdges() / _g->GetNodes();
@@ -454,7 +454,7 @@ class RGCR {
 	}
 
 	void load_base_response(double a, double b, double e, bool multiply_deg=true) {
-		std::string response_file_name = "response/base_response/" + _path_graph_name + "/NodeResponse.txt";
+		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
 		VecFlt drift, noise;
 		if (b != 0) {
 			load_vec_from_file(drift, response_file_name, 1, 0, _mx_nid);

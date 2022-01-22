@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 
   std::cout << get_time_str() << ": Experiment starts..."<< std::endl;
 
-  PUNGraph g = read_undirected_graph(GRAPH_CORE_PATH + path_graph_name);
+  PUNGraph g = read_undirected_graph(DATA_PATH + path_graph_name);
   RGCR rgcr(g, path_graph_name);
   RandomClustering random_clustering(g, path_graph_name, clustering_method, clustering_node_w_opt);
 
