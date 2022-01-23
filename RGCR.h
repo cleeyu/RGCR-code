@@ -584,6 +584,8 @@ class RGCR {
 			}
 		}
 		}
+
+		// The bias is always 0 for HT estimator in independent randomization.		
 		double bias_p = 0;
 
 		// Step 3: compute the dependency score of each pair of nodes, and update the variance.
@@ -712,6 +714,8 @@ class RGCR {
 		pair_clusters(cluster_sz, pairs);
 
 		// Step 2: compute the exposure probability of each node, and the bias.
+		// The bias is usually 0 for HT estimator unless the exposure probability is zero, 
+		//   which could happen in complete randomization (but not in independent randomization).
 		double bias_p = 0;
 		VecFlt expo_prob(_mx_nid);
 		#pragma omp parallel num_threads(N_THREADS) 
