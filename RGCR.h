@@ -18,15 +18,15 @@ static const int N_EXAMPLES_PER_PRINT = 100;
 enum EstimatorType {
 	HT,
 	HAJEK,
-	HAJEK_LINEAR,
-	HAJEK_EXPONENTIAL
+	// HAJEK_LINEAR,
+	// HAJEK_EXPONENTIAL
 };
 
 EstimatorType parse_estimator_type(const std::string& s) {
 	if (s == "HT") return HT;
 	else if (s == "Hajek") return HAJEK;
-	else if (s == "Hajek_linear") return HAJEK_LINEAR;
-	else if (s == "Hajek_exponential") return HAJEK_EXPONENTIAL;
+	// else if (s == "Hajek_linear") return HAJEK_LINEAR;
+	// else if (s == "Hajek_exponential") return HAJEK_EXPONENTIAL;
 	else {
 		throw std::invalid_argument("Invalid estimator_type to parse!");		
 	}
@@ -213,9 +213,9 @@ class RGCR {
 		initialize_mixing_analysis(1);
 		analyze_partition_ind(partition);
 		EstimatorType est_type = parse_estimator_type(est_type_str);
-		if (est_type != HT) {
-			compute_normalizer(est_type);
-		}
+		// if (est_type != HT) {
+		// 	compute_normalizer(est_type);
+		// }
 
 		double tau_gt = _mu1 - _mu0;
 		double sum_bias = 0;
@@ -269,9 +269,9 @@ class RGCR {
 		load_expo_prob(file_prefix, file_suffix);
 
 		EstimatorType est_type = parse_estimator_type(est_type_str);
-		if (est_type != HT) {
-			compute_normalizer(est_type);
-		}
+		// if (est_type != HT) {
+		// 	compute_normalizer(est_type);
+		// }
 
 		double tau_gt = _mu1 - _mu0;
 		out << "GATE = " << _mu1 - _mu0 << std::endl;
@@ -330,8 +330,8 @@ class RGCR {
 	int _mx_nid;
 	VecFlt _node_response_0, _node_response_1;
 	double _mu0, _mu1;
-	VecFlt _Q, _normalizer;
-	double _Q_bar;
+	// VecFlt _Q, _normalizer;
+	// double _Q_bar;
 	EstimatorType _estimator_type;
 
 	std::vector<VecFlt> _sum_expo_prob;	// _sum_expo_prob[k][u] = sum_{i=1} ^ mix[k] P_i(u).
@@ -342,50 +342,50 @@ class RGCR {
 	VecFlt _bias_single;	// List of biases of each single partition instance.
 	MatFlt _bias_mixing;	// List of biases at each mixing level instance.
 
-	void compute_Q() {
-		_Q = VecFlt(_mx_nid, 1.0);
-		#pragma omp parallel num_threads(N_THREADS)
-		{
-		#pragma omp for
-		for (int i = 0; i < _mx_nid; i++) {
-			for (int j = 0; j < i; j++) {
-				_Q[i] += _sum_co_expo_prob[0][i][j] / _sum_expo_prob[0][j];
-			}
-			for (int j = i+1; j < _mx_nid; j++) {
-				_Q[i] += _sum_co_expo_prob[0][j][i] / _sum_expo_prob[0][j];
-			}
-			_Q[i] /= _mx_nid * _sum_expo_prob[0][i];
-		}
-		}
-		_Q_bar = std::accumulate(_Q.begin(), _Q.end(), 0.0) / _mx_nid;
-	}
+	// void compute_Q() {
+	// 	_Q = VecFlt(_mx_nid, 1.0);
+	// 	#pragma omp parallel num_threads(N_THREADS)
+	// 	{
+	// 	#pragma omp for
+	// 	for (int i = 0; i < _mx_nid; i++) {
+	// 		for (int j = 0; j < i; j++) {
+	// 			_Q[i] += _sum_co_expo_prob[0][i][j] / _sum_expo_prob[0][j];
+	// 		}
+	// 		for (int j = i+1; j < _mx_nid; j++) {
+	// 			_Q[i] += _sum_co_expo_prob[0][j][i] / _sum_expo_prob[0][j];
+	// 		}
+	// 		_Q[i] /= _mx_nid * _sum_expo_prob[0][i];
+	// 	}
+	// 	}
+	// 	_Q_bar = std::accumulate(_Q.begin(), _Q.end(), 0.0) / _mx_nid;
+	// }
 
-	void compute_normalizer(EstimatorType estimator_type) {
-		if (_estimator_type == estimator_type) return;
+	// void compute_normalizer(EstimatorType estimator_type) {
+	// 	if (_estimator_type == estimator_type) return;
 
-		_estimator_type = estimator_type;
-		if (_estimator_type == HAJEK) {
-			_normalizer = VecFlt(_mx_nid, 1.0);
-			return;
-		}
+	// 	_estimator_type = estimator_type;
+	// 	if (_estimator_type == HAJEK) {
+	// 		_normalizer = VecFlt(_mx_nid, 1.0);
+	// 		return;
+	// 	}
 
-		if (_Q.size() != _mx_nid) {
-			compute_Q();
-		}
-		_normalizer.clear();
-		_normalizer.reserve(_mx_nid);
-		if (_estimator_type == HAJEK_LINEAR) {
-			for (int i = 0; i < _mx_nid; i++) {
-				_normalizer.push_back(1 + _Q_bar - _Q[i]);
-			}
-		} else if (_estimator_type == HAJEK_EXPONENTIAL) {
-			for (int i = 0; i < _mx_nid; i++) {
-				_normalizer.push_back(exp(_Q_bar -_Q[i]));
-			}
-		} else {
-			throw std::invalid_argument("Invalid estimator_type value!");
-		}
-	}
+	// 	if (_Q.size() != _mx_nid) {
+	// 		compute_Q();
+	// 	}
+	// 	_normalizer.clear();
+	// 	_normalizer.reserve(_mx_nid);
+	// 	if (_estimator_type == HAJEK_LINEAR) {
+	// 		for (int i = 0; i < _mx_nid; i++) {
+	// 			_normalizer.push_back(1 + _Q_bar - _Q[i]);
+	// 		}
+	// 	} else if (_estimator_type == HAJEK_EXPONENTIAL) {
+	// 		for (int i = 0; i < _mx_nid; i++) {
+	// 			_normalizer.push_back(exp(_Q_bar -_Q[i]));
+	// 		}
+	// 	} else {
+	// 		throw std::invalid_argument("Invalid estimator_type value!");
+	// 	}
+	// }
 
 	void load_default_node_response(int response_opt, double tau, bool is_additive, bool multiply_deg=true) {
 		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
@@ -999,12 +999,12 @@ class RGCR {
 			if (exposed) {
 				if (a) {
 					sum_inv_prob_1 += 1 / _sum_expo_prob[0][i];
-					sum_inv_prob_response_1_1 += _node_response_1[i] / _sum_expo_prob[0][i] / _normalizer[i];
-					sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i] / _normalizer[i];
+					sum_inv_prob_response_1_1 += _node_response_1[i] / _sum_expo_prob[0][i]; // / _normalizer[i];
+					sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i]; // / _normalizer[i];
 				} else {
 					sum_inv_prob_0 += 1 / _sum_expo_prob[0][i];
-					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob[0][i] / _normalizer[i];
-					sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i] / _normalizer[i];
+					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob[0][i]; // / _normalizer[i];
+					sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i]; // / _normalizer[i];
 				}
 			}
 		}
