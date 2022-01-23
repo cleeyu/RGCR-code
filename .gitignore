@@ -3,7 +3,7 @@
 results*
 post_analysis
 
-simulate_rgcr
+estimate_rgcr_expo_prob
 eval_prob_formula
 eval_prob_simulation
 simulate_GCR_variance

@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   std::cout << rand() << ' ' << rand() << ' ' << rand() << std::endl << std::endl;
 
   std::string usage_msg = "Usage: ./" + std::string(argv[0]);
-  usage_msg += " -g path_graph_name[Sample/SampleGraph]";
+  usage_msg += " -g path_graph_name[SW32]";
   usage_msg += " -c clustering_method[r_net-3]";
   usage_msg += " -w clustering_node_w_opt[uniform]";
   usage_msg += " -n n_samples[100]";

@@ -4,8 +4,8 @@ default: all
 
 all: simulate_rgcr eval_prob_formula eval_prob_simulation simulate_GCR_variance
 
-simulate_rgcr: simulate_rgcr.cpp RGCR.h random_clustering/random_clustering.h utils/utils.h utils/utils_snap.h
-	$(CXX) $(CFLAGS) $< $(LDFLAGS) $(SNAP_OBJ) -o simulate_rgcr
+estimate_rgcr_expo_prob: estimate_rgcr_expo_prob.cpp RGCR.h random_clustering/random_clustering.h utils/utils.h utils/utils_snap.h
+	$(CXX) $(CFLAGS) $< $(LDFLAGS) $(SNAP_OBJ) -o estimate_rgcr_expo_prob
 
 eval_prob_formula: eval_prob_formula.cpp RGCR.h random_clustering/random_clustering.h utils/utils.h utils/utils_snap.h
 	$(CXX) $(CFLAGS) $< $(LDFLAGS) $(SNAP_OBJ) -o eval_prob_formula
