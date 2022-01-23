@@ -11,21 +11,24 @@ int main(int argc, char **argv) {
   std::string usage_msg = "Usage: ./" + std::string(argv[0]);
   usage_msg += " -g path_graph_name[SW32]";
   usage_msg += " -c clustering_method[r_net-3-uniform]";
+
   usage_msg += " -s file_suffix[mix128n-0.txt]";
   usage_msg += " -r use_complete_rand[false]";
-  usage_msg += " -h use_hajek[false]";
+  usage_msg += " -h estimator_type[Hajek]";
+
   usage_msg += " -a base_response[1]";
   usage_msg += " -b drift_std[0.5]";
   usage_msg += " -e noise_std[0.1]";
   usage_msg += " -t GATE[1]";
   usage_msg += " -m multiplicative_ATE[false]";
+  usage_msg += " -o output_file_suffix[\"\"]";
 
   // Default run parameters.
   std::string path_graph_name = "SW32";
   std::string clustering_method = "r_net-3-uniform";
   std::string file_suffix = "mix128n-0.txt";
   bool use_complete_rand = false;
-  bool use_hajek = false;
+  std::string est_type_str = "Hajek";
   double a = 1;
   double b = 0.5;
   double e = 0.1;
@@ -49,7 +52,7 @@ int main(int argc, char **argv) {
         use_complete_rand = true;
         break;
       case 'h':
-        use_hajek = true;
+        est_type_str = optarg;
         break;
       case 'a':
         a = atof(optarg);
@@ -66,6 +69,9 @@ int main(int argc, char **argv) {
       case 'm':
         additive_ATE = false;
         break;
+      case 'o':
+        output_file_suffix = optarg;
+        break;
       default:
         std::cout << usage_msg << std::endl;
         return -1;
@@ -78,11 +84,7 @@ int main(int argc, char **argv) {
   } else {
     run_name += "independent_randomization,";
   }
-  if (use_hajek) {
-    run_name += "Hajek,";    
-  } else {
-    run_name += "HT,";
-  }
+  run_name += est_type_str + ',';
   run_name += std::to_string(a) + ',' + std::to_string(b) + ',' + std::to_string(e);
   if (additive_ATE) {
     run_name += ",additive_TE,";    
@@ -97,13 +99,10 @@ int main(int argc, char **argv) {
   RGCR rgcr(g, path_graph_name, false);
   rgcr.load_node_response(a, b, e, GATE, additive_ATE);
 
-  std::string output_file_name = "variances-HT.txt";
-  if (use_hajek) {
-    output_file_name = "variances-Hajek.txt";
-  }
+  std::string output_file_name = "variances-" + est_type_str + output_file_suffix + ".txt";
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
-  rgcr.eval_expo_prob_formula(clustering_method, use_complete_rand, file_suffix, use_hajek, file_out);
+  rgcr.eval_expo_prob_formula(clustering_method, use_complete_rand, file_suffix, est_type_str, file_out);
   file_out.close();
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;

@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
   usage_msg += " -e noise_std[0.1]";
   usage_msg += " -t GATE[1]";
   usage_msg += " -m multiplicative_ATE[false]";
-  usage_msg += " -o output_file_suffix[""]";
+  usage_msg += " -o output_file_suffix[\"\"]";
 
   // Default run parameters.
   std::string path_graph_name = "SW32";

@@ -248,12 +248,15 @@ class RGCR {
 		out << std::endl;
 	}
 
-	void eval_expo_prob_formula(const std::string& clustering_method, bool use_complete_rand, const std::string& file_suffix, bool use_hajek=false, std::ostream& out = std::cout) {
+	void eval_expo_prob_formula(const std::string& clustering_method, bool use_complete_rand, const std::string& file_suffix, 
+		const std::string& est_type_str, std::ostream& out = std::cout) 
+	{
+		EstimatorType est_type = parse_estimator_type(est_type_str);
 		get_output_directory(use_complete_rand, true);
 		std::string file_prefix = _output_file_directory + "expo_prob/" + clustering_method;
 		load_expo_prob(file_prefix, file_suffix);
 		double var_1 = 0, var_2 = 0;
-		compute_mixing_var_12(0, 1, var_1, var_2, use_hajek);
+		compute_mixing_var_12(0, 1, var_1, var_2, est_type==HAJEK);
 		out << var_1 << '\t' << var_2 << '\t' << var_1 + var_2 << std::endl;
 	}
 
