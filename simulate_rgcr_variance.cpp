@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
   RandomClustering random_clustering(g, path_graph_name, clustering_method, clustering_node_w_opt);
-  rgcr.eval_expo_prob_simulation_stratified(random_clustering, n_rounds, use_complete_rand, file_suffix, est_type_str, file_out);
+  rgcr.simulate_var_given_expo_prob(random_clustering, n_rounds, use_complete_rand, file_suffix, est_type_str, file_out);
   file_out.close();
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;

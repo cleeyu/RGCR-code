@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
   std::string output_file_name = "variances-" + est_type_str + output_file_suffix + ".txt";
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
-  rgcr.eval_expo_prob_formula(clustering_method, use_complete_rand, file_suffix, est_type_str, file_out);
+  rgcr.compute_var_given_expo_prob(clustering_method, use_complete_rand, file_suffix, est_type_str, file_out);
   file_out.close();
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;

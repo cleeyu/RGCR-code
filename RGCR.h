@@ -47,7 +47,7 @@ class RGCR {
 		load_treatment_response(tau, is_additive);
 	}
 
-	void independent_mixing_analysis_specified(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, bool use_complete_rand, int run_id = 0) {
+	void independent_mixing_analysis_seq(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, bool use_complete_rand, int run_id = 0) {
 		get_output_directory(use_complete_rand, false);
 		_clustering_method = random_clustering.method();
 
@@ -127,7 +127,7 @@ class RGCR {
 		if (mixing_levels.back() != n_samples) {
 			std::cout << "Input n_samples must be a power of 10, but is " << n_samples << ". Use " << mixing_levels.back() << " instead." << std::endl;
 		}
-		independent_mixing_analysis_specified(random_clustering, mixing_levels, use_complete_rand, run_id);
+		independent_mixing_analysis_seq(random_clustering, mixing_levels, use_complete_rand, run_id);
 	}
 
 	void stratified_mixing_analysis(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, int run_id = 0) {
@@ -248,9 +248,8 @@ class RGCR {
 		out << std::endl;
 	}
 
-	void eval_expo_prob_formula(const std::string& clustering_method, bool use_complete_rand, const std::string& file_suffix, 
-		const std::string& est_type_str, std::ostream& out = std::cout) 
-	{
+	void compute_var_given_expo_prob(const std::string& clustering_method, bool use_complete_rand, const std::string& file_suffix, 
+		const std::string& est_type_str, std::ostream& out = std::cout)	{
 		EstimatorType est_type = parse_estimator_type(est_type_str);
 		get_output_directory(use_complete_rand, true);
 		std::string file_prefix = _output_file_directory + "expo_prob/" + clustering_method;
@@ -260,7 +259,7 @@ class RGCR {
 		out << var_1 << '\t' << var_2 << '\t' << var_1 + var_2 << std::endl;
 	}
 
-	void eval_expo_prob_simulation_stratified(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, 
+	void simulate_var_given_expo_prob(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, 
 		const std::string& file_suffix, const std::string& est_type_str, std::ostream& out = std::cout) {
 		get_output_directory(use_complete_rand, true);
 		_clustering_method = random_clustering.method();
