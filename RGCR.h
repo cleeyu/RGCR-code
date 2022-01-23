@@ -491,37 +491,37 @@ class RGCR {
 		// status = system(("mkdir -p " + _output_file_directory + "partition_info").c_str());
 	}
 
-	VecFlt eval_partition_meta(const VecFlt& partition) const {
-		std::unordered_map<double, int> cluster_size_map;
-		long num_edge_cut = 0;
-		for (TUNGraph::TNodeI NI = _g->BegNI(); NI != _g->EndNI(); NI++) {
-			int node_id = NI.GetId();
-			cluster_size_map[partition[node_id]] ++;
-			for (int d = 0; d < NI.GetOutDeg(); d++) {
-				if (partition[node_id] != partition[NI.GetOutNId(d)]) {
-					num_edge_cut ++;
-				}
-			}
-		}
+	// VecFlt eval_partition_meta(const VecFlt& partition) const {
+	// 	std::unordered_map<double, int> cluster_size_map;
+	// 	long num_edge_cut = 0;
+	// 	for (TUNGraph::TNodeI NI = _g->BegNI(); NI != _g->EndNI(); NI++) {
+	// 		int node_id = NI.GetId();
+	// 		cluster_size_map[partition[node_id]] ++;
+	// 		for (int d = 0; d < NI.GetOutDeg(); d++) {
+	// 			if (partition[node_id] != partition[NI.GetOutNId(d)]) {
+	// 				num_edge_cut ++;
+	// 			}
+	// 		}
+	// 	}
 
-		std::vector<int> cluster_size_vec;
-		cluster_size_vec.reserve(cluster_size_map.size());
-		for (auto const& p : cluster_size_map) {
-			cluster_size_vec.push_back(p.second);
-		}
-		std::sort(cluster_size_vec.begin(), cluster_size_vec.end(), std::greater<int>());
-		while (cluster_size_vec.size() < 5) {
-			cluster_size_vec.push_back(0);
-		}
+	// 	std::vector<int> cluster_size_vec;
+	// 	cluster_size_vec.reserve(cluster_size_map.size());
+	// 	for (auto const& p : cluster_size_map) {
+	// 		cluster_size_vec.push_back(p.second);
+	// 	}
+	// 	std::sort(cluster_size_vec.begin(), cluster_size_vec.end(), std::greater<int>());
+	// 	while (cluster_size_vec.size() < 5) {
+	// 		cluster_size_vec.push_back(0);
+	// 	}
 
-		VecFlt summary;	// [n_clusters, ratio_edge_cut, ratio_size_1, ratio_size_2, ..., ratio_size_5]
-		summary.push_back(cluster_size_vec.size());
-		summary.push_back(0.5 * num_edge_cut / _g->GetEdges());
-		for (int k = 0; k < 5; k ++) {
-			summary.push_back(1.0 * cluster_size_vec[k] / _mx_nid);
-		}
-		return summary;
-	}
+	// 	VecFlt summary;	// [n_clusters, ratio_edge_cut, ratio_size_1, ratio_size_2, ..., ratio_size_5]
+	// 	summary.push_back(cluster_size_vec.size());
+	// 	summary.push_back(0.5 * num_edge_cut / _g->GetEdges());
+	// 	for (int k = 0; k < 5; k ++) {
+	// 		summary.push_back(1.0 * cluster_size_vec[k] / _mx_nid);
+	// 	}
+	// 	return summary;
+	// }
 
 	void initialize_mixing_analysis(int n_mixing_levels) {
 		_sum_expo_prob = std::vector<VecFlt>(n_mixing_levels);
@@ -674,10 +674,10 @@ class RGCR {
 	double compute_expo_prob_complete_rand(const std::unordered_set<double>& adjacent_clusters, 
 		const std::unordered_map<double, double>& pairs) const {
 		std::unordered_map<double, int> assignments;
-		return compute_expo_prob_complete_rand(adjacent_clusters, pairs, assignments);
+		return compute_expo_prob_complete_rand_helper(adjacent_clusters, pairs, assignments);
 	}
 
-	double compute_expo_prob_complete_rand(const std::unordered_set<double>& adjacent_clusters, 
+	double compute_expo_prob_complete_rand_helper(const std::unordered_set<double>& adjacent_clusters, 
 		const std::unordered_map<double, double>& pairs, 
 		std::unordered_map<double, int>& assignments) const {
 		assignments.clear();
@@ -745,7 +745,7 @@ class RGCR {
 			variance_i += 2 * _node_response_0[i] * _node_response_1[i];
 
 			std::unordered_map<double, int> assignments;
-			compute_expo_prob_complete_rand(node_to_adjencent_clusters[i], pairs, assignments);
+			compute_expo_prob_complete_rand_helper(node_to_adjencent_clusters[i], pairs, assignments);
 			for (int j = 0; j < i; j++) {
 				if (expo_prob[j] == 0) continue;
 
