@@ -62,10 +62,14 @@ int main(int argc, char **argv) {
 
   std::cout << path_graph_name << ',' << clustering_method << ',' << clustering_node_w_opt << ',' << n_samples << ',' << run_id;
   if (use_complete_randomization) {
-    std::cout << ",total_randomization";
+    std::cout << ",complete_randomization";
+  } else {
+    std::cout << ",independent_randomization";    
   }
   if (use_stratified_sampling) {
     std::cout << ",stratified_sampling";
+  } else {
+    std::cout << ",independent_sampling";    
   }
   std::cout << std::endl;
 
@@ -80,9 +84,6 @@ int main(int argc, char **argv) {
   } else {
     rgcr.independent_mixing_analysis(random_clustering, n_samples, use_complete_randomization, run_id);
   }
-
-    
-  // rgcr.independent_mixing_analysis_specified(random_clustering, {25, 50, 200, 400, 4000}, use_complete_randomization, run_id);
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;
   return 0;
