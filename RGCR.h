@@ -332,7 +332,6 @@ class RGCR {
 	double _Q_bar;
 	EstimatorType _estimator_type;
 
-
 	std::vector<VecFlt> _sum_expo_prob;	// _sum_expo_prob[k][u] = sum_{i=1} ^ mix[k] P_i(u).
 	std::vector<MatFlt> _sum_co_expo_prob;	// _sum_co_expo_prob[k][u][v] = sum_{i=1} ^ mix[k] P_i(u,v). (u > v)
 	std::vector<MatFlt> _sum_adv_expo_prob;	// _sum_adv_expo_prob[k][u][v] = sum_{i=1} ^ mix[k] P_i(u1,v0). (u > v)
