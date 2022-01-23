@@ -47,7 +47,8 @@ class RGCR {
 		load_treatment_response(tau, is_additive);
 	}
 
-	void independent_mixing_analysis_seq(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, bool use_complete_rand, int run_id = 0) {
+	void independent_mixing_analysis_seq(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, 
+		bool use_complete_rand, int run_id = 0) {
 		get_output_directory(use_complete_rand, false);
 		_clustering_method = random_clustering.method();
 
@@ -197,7 +198,8 @@ class RGCR {
 		print_result_to_file(_bias_single, _variance_single, "single.txt");
 	}
 
-	void simulate_GCR_variance_distribution(RandomClustering& random_clustering, int n_clusterings, int n_samples, const std::string& est_type_str, std::ostream& out = std::cout) {
+	void simulate_GCR_variance_distribution(RandomClustering& random_clustering, int n_clusterings, int n_samples, 
+		const std::string& est_type_str, std::ostream& out = std::cout) {
 		out << "GATE = " << _mu1 - _mu0 << std::endl;
 		for (int clustering_i = 0; clustering_i < n_clusterings; clustering_i++) {
 			VecFlt partition;
@@ -384,7 +386,6 @@ class RGCR {
 			throw std::invalid_argument("Invalid estimator_type value!");
 		}
 	}
-
 
 	void load_default_node_response(int response_opt, double tau, bool is_additive, bool multiply_deg=true) {
 		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
