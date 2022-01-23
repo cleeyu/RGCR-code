@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
   usage_msg += " -n n_samples_per_clustering[1000]";
   usage_msg += " -k n_clusterings[100]";
   usage_msg += " -a base_response[1]";
-  usage_msg += " -b drift_std[0.5]";
-  usage_msg += " -e noise_std[0.1]";
+  usage_msg += " -b drift_coef[0.5]";
+  usage_msg += " -e noise_coef[0.1]";
   usage_msg += " -t GATE[1]";
   usage_msg += " -m multiplicative_ATE[false]";
   usage_msg += " -o output_file_suffix[""]";

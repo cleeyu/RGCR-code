@@ -38,7 +38,7 @@ class RGCR {
 		check_graph_validity(_g);
 		_mx_nid = _g->GetMxNId();
 		if (load_default_response) {
-			load_default_node_response(3, 1.0, false, true);
+			load_default_node_response();
 		}
 	}
 
@@ -387,17 +387,14 @@ class RGCR {
 	// 	}
 	// }
 
-	void load_default_node_response(int response_opt, double tau, bool is_additive, bool multiply_deg=true) {
-		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
-		load_vec_from_file(_node_response_0, response_file_name, response_opt, 0, _mx_nid);
-		if (multiply_deg) {
-			double avg_deg = 2.0 * _g->GetEdges() / _g->GetNodes();
-			for (TUNGraph::TNodeI NI = _g->BegNI(); NI != _g->EndNI(); NI++) {
-				_node_response_0[NI.GetId()] *= NI.GetOutDeg() / avg_deg;
-			}
-		}
-		_mu0 = std::accumulate(_node_response_0.begin(), _node_response_0.end(), 0.0) / _mx_nid;
-
+	void load_default_node_response() {
+		a = 1.0;
+		b = 0.5;
+		e = 0.1;
+		multiply_deg = true;
+		tau = 1.0;
+		is_additive = false;
+		load_base_response(a, b, e, multiply_deg);
 		load_treatment_response(tau, is_additive);
 
 		if (IS_DEBUG) {
@@ -419,8 +416,6 @@ class RGCR {
 		if (e != 0) {
 			load_vec_from_file(noise, response_file_name, 2, 0, _mx_nid);
 		}
-		b *= 2;
-		e *= 10;
 
 		_node_response_0.clear();
 		_node_response_0.reserve(_mx_nid);
@@ -428,10 +423,10 @@ class RGCR {
 		for (int i = 0; i < _mx_nid; i++) {
 			double response = a;
 			if (b != 0) {
-				response += b * (drift[i] - 1);
+				response += b * drift[i];
 			}
 			if (e != 0) {
-				response += e * (noise[i] - 1);
+				response += e * noise[i];
 			}
 			_node_response_0.push_back(response);
 			min_response = std::min(min_response, response);
