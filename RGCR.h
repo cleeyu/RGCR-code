@@ -411,10 +411,10 @@ class RGCR {
 		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
 		VecFlt drift, noise;
 		if (b != 0) {
-			load_vec_from_file(drift, response_file_name, 1, 0, _mx_nid);
+			load_vec_from_file(drift, response_file_name, 0, 0, _mx_nid);
 		}
 		if (e != 0) {
-			load_vec_from_file(noise, response_file_name, 2, 0, _mx_nid);
+			load_vec_from_file(noise, response_file_name, 1, 0, _mx_nid);
 		}
 
 		_node_response_0.clear();
