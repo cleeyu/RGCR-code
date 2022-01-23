@@ -192,6 +192,10 @@ class RGCR {
 			mixing_levels.push_back(mix_level);
 			mix_level *= 2;
 		}
+		if (mixing_levels.back() != n_rounds) {
+			std::cout << "Input n_rounds must be a power of 2, but is " << n_rounds << ". Use " << mixing_levels.back() << " instead." << std::endl;
+			n_rounds = mixing_levels.back();
+		}
 		int n_mixing_levels = mixing_levels.size();
 		initialize_mixing_analysis(n_mixing_levels);
 
@@ -218,23 +222,26 @@ class RGCR {
 				double var_mix = compute_mixing_var(k, mixing_levels[k] * sum_partition_wt);
 				_bias_mixing[k].push_back(bias_mix);
 				_variance_mixing[k].push_back(var_mix);
-				print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix_" + std::to_string(k) + ".txt");
+				print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix_" + std::to_string(mixing_levels[k]) + "n.txt");
 				_bias_mixing[k].clear();
 				_variance_mixing[k].clear();
-				if (round_i == mixing_levels[k]) {
-					print_expo_prob(k, mixing_levels[k] * sum_partition_wt, std::to_string(k) + "-" + std::to_string(run_id) + ".txt");
-				}
+
 				if (k < n_mixing_levels - 1) {
 					add_vector(_sum_expo_prob[k+1], _sum_expo_prob[k]);
 					add_matrix(_sum_co_expo_prob[k+1], _sum_co_expo_prob[k]);
 					add_matrix(_sum_adv_expo_prob[k+1], _sum_adv_expo_prob[k]);
-				}
-				_sum_expo_prob[k] = VecFlt(_mx_nid);
-				_sum_co_expo_prob[k] = MatFlt(_mx_nid);
-				_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
-				for (int i = 0; i < _mx_nid; i++) {
-					_sum_co_expo_prob[k][i] = VecFlt(i);
-					_sum_adv_expo_prob[k][i] = VecFlt(i);
+					_sum_expo_prob[k] = VecFlt(_mx_nid);
+					_sum_co_expo_prob[k] = MatFlt(_mx_nid);
+					_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
+					for (int i = 0; i < _mx_nid; i++) {
+						_sum_co_expo_prob[k][i] = VecFlt(i);
+						_sum_adv_expo_prob[k][i] = VecFlt(i);
+					}
+				} else {
+					if (round_i != mixing_levels[k]) {
+						std::cout << "Weird! Number of rounds is exceeded?" << std::endl;
+					}
+					print_expo_prob(k, mixing_levels[k] * sum_partition_wt, "mix_" + std::to_string(mixing_levels[k]) + "n-" + std::to_string(run_id) + ".txt");					
 				}
 				k ++;
 			}
