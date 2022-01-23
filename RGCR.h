@@ -486,7 +486,7 @@ class RGCR {
 		status = system(("mkdir -p " + _output_file_directory + "variance").c_str());
 		status = system(("mkdir -p " + _output_file_directory + "mse").c_str());
 		status = system(("mkdir -p " + _output_file_directory + "expo_prob").c_str());
-		status = system(("mkdir -p " + _output_file_directory + "partition_info").c_str());
+		// status = system(("mkdir -p " + _output_file_directory + "partition_info").c_str());
 	}
 
 	VecFlt eval_partition_meta(const VecFlt& partition) const {
@@ -627,22 +627,22 @@ class RGCR {
 			_variance_single.clear();
 		}
 
-		std::bernoulli_distribution bern_rv(0.01);
-		std::default_random_engine random_eng(rand());
-		if (bern_rv(random_eng)) {
-		// if (true) {
-			VecFlt partition_meta = eval_partition_meta(partition);
+		// std::bernoulli_distribution bern_rv(0.01);
+		// std::default_random_engine random_eng(rand());
+		// if (bern_rv(random_eng)) {
+		// // if (true) {
+		// 	VecFlt partition_meta = eval_partition_meta(partition);
 
-			std::string output_file_name = _output_file_directory + "partition_info/" + _clustering_method + "-" + "-partition_info.txt";
-			std::ofstream file_output;
-			file_output.open(output_file_name, std::ofstream::app);
-			file_output << bias << '\t' << variance;
-			for (double v : partition_meta) {
-				file_output << '\t' << v;
-			}
-			file_output << std::endl;
-			file_output.close();
-		}
+		// 	std::string output_file_name = _output_file_directory + "partition_info/" + _clustering_method + "-" + "-partition_info.txt";
+		// 	std::ofstream file_output;
+		// 	file_output.open(output_file_name, std::ofstream::app);
+		// 	file_output << bias << '\t' << variance;
+		// 	for (double v : partition_meta) {
+		// 		file_output << '\t' << v;
+		// 	}
+		// 	file_output << std::endl;
+		// 	file_output.close();
+		// }
 	}
 
 	void pair_clusters(const std::unordered_map<double, int>& cluster_sz, 
