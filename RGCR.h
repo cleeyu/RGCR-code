@@ -48,8 +48,7 @@ class RGCR {
 	}
 
 	void independent_mixing_analysis_specified(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, bool use_complete_rand, int run_id = 0) {
-		// TODO: merge this function with the next one.
-		get_output_directory(use_complete_rand, false, true);
+		get_output_directory(use_complete_rand, false);
 		_clustering_method = random_clustering.method();
 
 		if (mixing_levels.size() == 0) {
@@ -82,20 +81,22 @@ class RGCR {
 					_bias_mixing[k].clear();
 					_variance_mixing[k].clear();
 				}
-				// if (k >= 2 && sample_i == mixing_levels[k]) {
-				// 	print_expo_prob(k, mixing_levels[k], std::to_string(mixing_levels[k]) + "-" + std::to_string(run_id) + ".txt");
-				// }
 				if (k < n_mixing_levels - 1) {
 					add_vector(_sum_expo_prob[k+1], _sum_expo_prob[k]);
 					add_matrix(_sum_co_expo_prob[k+1], _sum_co_expo_prob[k]);
 					add_matrix(_sum_adv_expo_prob[k+1], _sum_adv_expo_prob[k]);
-				}
-				_sum_expo_prob[k] = VecFlt(_mx_nid);
-				_sum_co_expo_prob[k] = MatFlt(_mx_nid);
-				_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
-				for (int i = 0; i < _mx_nid; i++) {
-					_sum_co_expo_prob[k][i] = VecFlt(i);
-					_sum_adv_expo_prob[k][i] = VecFlt(i);
+					_sum_expo_prob[k] = VecFlt(_mx_nid);
+					_sum_co_expo_prob[k] = MatFlt(_mx_nid);
+					_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
+					for (int i = 0; i < _mx_nid; i++) {
+						_sum_co_expo_prob[k][i] = VecFlt(i);
+						_sum_adv_expo_prob[k][i] = VecFlt(i);
+					}
+				} else {
+					if (sample_i != mixing_levels[k]) {
+						std::cout << "Weird! Max mixing level is exceeded?" << std::endl;
+					}
+					print_expo_prob(k, mixing_levels[k], "mix_" + std::to_string(mixing_levels[k]) + "-" + std::to_string(run_id) + ".txt");					
 				}
 				k ++;
 			}
@@ -117,69 +118,17 @@ class RGCR {
 	}
 
 	void independent_mixing_analysis(RandomClustering& random_clustering, int n_samples, bool use_complete_rand, int run_id = 0) {
-		get_output_directory(use_complete_rand, false);
-		_clustering_method = random_clustering.method();
-
 		std::vector<int> mixing_levels;
 		int mix_level = 10;
 		while (mix_level <= n_samples) {
 			mixing_levels.push_back(mix_level);
 			mix_level *= 10;
 		}
-		int n_mixing_levels = mixing_levels.size();
-		initialize_mixing_analysis(n_mixing_levels);
-
-		for (int sample_i = 1; sample_i <= n_samples; sample_i++) {
-			VecFlt partition;
-			random_clustering.gen_partition(partition);
-			if (use_complete_rand) {
-				analyze_partition_complete(partition);
-			} else {
-				analyze_partition_ind(partition);
-			}
-			int k = 0;
-			while (k < n_mixing_levels && sample_i % mixing_levels[k] == 0) {
-				double bias_mix = compute_mixing_bias(k);
-				double var_mix = compute_mixing_var(k, mixing_levels[k]);
-				_bias_mixing[k].push_back(bias_mix);
-				_variance_mixing[k].push_back(var_mix);
-				if (mixing_levels[k] * _bias_mixing[k].size() >= N_EXAMPLES_PER_PRINT) {
-					print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix_" + std::to_string(k + 1) + ".txt");
-					_bias_mixing[k].clear();
-					_variance_mixing[k].clear();
-				}
-				if (k >= 2 && sample_i == mixing_levels[k]) {
-					print_expo_prob(k, mixing_levels[k], std::to_string(mixing_levels[k]) + "-" + std::to_string(run_id) + ".txt");
-				}
-				if (k < n_mixing_levels - 1) {
-					add_vector(_sum_expo_prob[k+1], _sum_expo_prob[k]);
-					add_matrix(_sum_co_expo_prob[k+1], _sum_co_expo_prob[k]);
-					add_matrix(_sum_adv_expo_prob[k+1], _sum_adv_expo_prob[k]);
-				}
-				_sum_expo_prob[k] = VecFlt(_mx_nid);
-				_sum_co_expo_prob[k] = MatFlt(_mx_nid);
-				_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
-				for (int i = 0; i < _mx_nid; i++) {
-					_sum_co_expo_prob[k][i] = VecFlt(i);
-					_sum_adv_expo_prob[k][i] = VecFlt(i);
-				}
-				k ++;
-			}
-			if (sample_i % 100 == 0) {
-				std::cout << get_time_str() << ": Partition " << sample_i << std::endl;
-			}
+		if (mixing_levels.back() != n_samples) {
+			std::cout << "Input n_samples must be a power of 10, but is " << n_samples << ". Use " << mixing_levels.back() << " instead." << std::endl;
+			n_rounds = mixing_levels.back();
 		}
-
-		if (_variance_single.size() != 0) {
-			std::cout << "Weird! Results for single should be empty here!" << std::endl;
-			print_result_to_file(_bias_single, _variance_single, "single");
-		}
-		for (int k = 0; k < n_mixing_levels; k++) {
-			if (_variance_mixing[k].size() != 0) {
-				std::cout << "Weird! Results for mixing should have all been printed!" << std::endl;
-				print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix_" + std::to_string(k + 1));
-			}
-		}
+		independent_mixing_analysis_specified(random_clustering, mixing_levels, use_complete_rand, run_id);
 	}
 
 	void stratified_mixing_analysis(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, int run_id = 0) {
@@ -517,7 +466,7 @@ class RGCR {
 		_mu1 = std::accumulate(_node_response_1.begin(), _node_response_1.end(), 0.0) / _mx_nid;
 	}
 
-	void get_output_directory(bool use_complete_rand, bool use_stratified_sampling, bool specified=false) {
+	void get_output_directory(bool use_complete_rand, bool use_stratified_sampling) {
 		_output_file_directory = "results/";
 		if (use_complete_rand) {
 			_output_file_directory += "com";
@@ -528,9 +477,9 @@ class RGCR {
 			_output_file_directory += "_stratified";
 		}
 		_output_file_directory += "/" + _path_graph_name;
-		if (specified) {
-			_output_file_directory += "-specified";
-		}
+		// if (specified) {
+		// 	_output_file_directory += "-specified";
+		// }
 		_output_file_directory += '/';
 
 		int status;
