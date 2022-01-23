@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   usage_msg += " -g path_graph_name[SW32]";
   usage_msg += " -c clustering_method[r_net-3]";
   usage_msg += " -w clustering_weight[uniform]";
-  usage_msg += " -s file_suffix[3-0.txt]";
+  usage_msg += " -s file_suffix[mix128n-0.txt]";
   usage_msg += " -r use_complete_rand[false]";
   usage_msg += " -h estimator_type[Hajek]";
   usage_msg += " -n n_rounds[1]";
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
   std::string path_graph_name = "SW32";
   std::string clustering_method = "r_net-3";
   std::string clustering_node_w_opt = "uniform";
-  std::string file_suffix = "3-0.txt";
+  std::string file_suffix = "mix128n-0.txt";
   bool use_complete_rand = false;
   std::string est_type_str = "Hajek";
   int n_rounds = 1;

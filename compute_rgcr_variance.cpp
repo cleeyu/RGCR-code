@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
   std::string usage_msg = "Usage: ./" + std::string(argv[0]);
   usage_msg += " -g path_graph_name[SW32]";
   usage_msg += " -c clustering_method[r_net-3-uniform]";
-  usage_msg += " -s file_suffix[3-0.txt]";
+  usage_msg += " -s file_suffix[mix128n-0.txt]";
   usage_msg += " -r use_complete_rand[false]";
   usage_msg += " -h use_hajek[false]";
   usage_msg += " -a base_response[1]";
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
   // Default run parameters.
   std::string path_graph_name = "SW32";
   std::string clustering_method = "r_net-3-uniform";
-  std::string file_suffix = "3-0.txt";
+  std::string file_suffix = "mix128n-0.txt";
   bool use_complete_rand = false;
   bool use_hajek = false;
   double a = 1;
@@ -74,9 +74,9 @@ int main(int argc, char **argv) {
 
   std::string run_name = path_graph_name + ',' + clustering_method + ',' + file_suffix + ',';
   if (use_complete_rand) {
-    run_name += "com_randomization,";
+    run_name += "complete_randomization,";
   } else {
-    run_name += "ind_randomization,";
+    run_name += "independent_randomization,";
   }
   if (use_hajek) {
     run_name += "Hajek,";    

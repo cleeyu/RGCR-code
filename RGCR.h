@@ -77,7 +77,7 @@ class RGCR {
 				_bias_mixing[k].push_back(bias_mix);
 				_variance_mixing[k].push_back(var_mix);
 				if (mixing_levels[k] * _bias_mixing[k].size() >= N_EXAMPLES_PER_PRINT) {
-					print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix_" + std::to_string(mixing_levels[k]) + ".txt");
+					print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix" + std::to_string(mixing_levels[k]) + ".txt");
 					_bias_mixing[k].clear();
 					_variance_mixing[k].clear();
 				}
@@ -96,7 +96,7 @@ class RGCR {
 					if (sample_i != mixing_levels[k]) {
 						std::cout << "Weird! Max mixing level is exceeded?" << std::endl;
 					}
-					print_expo_prob(k, mixing_levels[k], "mix_" + std::to_string(mixing_levels[k]) + "-" + std::to_string(run_id) + ".txt");					
+					print_expo_prob(k, mixing_levels[k], "mix" + std::to_string(mixing_levels[k]) + "-" + std::to_string(run_id) + ".txt");					
 				}
 				k ++;
 			}
@@ -112,7 +112,7 @@ class RGCR {
 		for (int k = 0; k < n_mixing_levels; k++) {
 			if (_variance_mixing[k].size() != 0) {
 				std::cout << "Weird! Results for mixing should have all been printed!" << std::endl;
-				print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix_" + std::to_string(k + 1));
+				print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix" + std::to_string(k + 1));
 			}
 		}
 	}
@@ -170,7 +170,7 @@ class RGCR {
 				double var_mix = compute_mixing_var(k, mixing_levels[k] * sum_partition_wt);
 				_bias_mixing[k].push_back(bias_mix);
 				_variance_mixing[k].push_back(var_mix);
-				print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix_" + std::to_string(mixing_levels[k]) + "n.txt");
+				print_result_to_file(_bias_mixing[k], _variance_mixing[k], "mix" + std::to_string(mixing_levels[k]) + "n.txt");
 				_bias_mixing[k].clear();
 				_variance_mixing[k].clear();
 
@@ -189,7 +189,7 @@ class RGCR {
 					if (round_i != mixing_levels[k]) {
 						std::cout << "Weird! Number of rounds is exceeded?" << std::endl;
 					}
-					print_expo_prob(k, mixing_levels[k] * sum_partition_wt, "mix_" + std::to_string(mixing_levels[k]) + "n-" + std::to_string(run_id) + ".txt");					
+					print_expo_prob(k, mixing_levels[k] * sum_partition_wt, "mix" + std::to_string(mixing_levels[k]) + "n-" + std::to_string(run_id) + ".txt");					
 				}
 				k ++;
 			}
@@ -883,7 +883,7 @@ class RGCR {
 		#pragma omp parallel sections
 		{
 		{
-		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-expo_prob_" + file_suffix;
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-expo-" + file_suffix;
 		std::ofstream file_output(output_file_name);
 		for (double v : _sum_expo_prob[vec_id]) {
 			file_output << v / n_mixing << std::endl;
@@ -892,7 +892,7 @@ class RGCR {
 		}
 		#pragma omp section
 		{
-		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-co_expo_prob_" + file_suffix;
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-co_expo-" + file_suffix;
 		std::ofstream file_output(output_file_name);
 		for (const VecFlt& row : _sum_co_expo_prob[vec_id]) {
 			for (double v : row) {
@@ -904,7 +904,7 @@ class RGCR {
 		}
 		#pragma omp section
 		{
-		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-adv_expo_prob_" + file_suffix;
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-adv_expo-" + file_suffix;
 		std::ofstream file_output(output_file_name);
 		for (const VecFlt& row : _sum_adv_expo_prob[vec_id]) {
 			for (double v : row) {
@@ -922,17 +922,17 @@ class RGCR {
 		{
 		{
 		_sum_expo_prob = std::vector<VecFlt>(1);
-		load_vec_from_file(_sum_expo_prob[0], file_prefix+"-expo_prob_"+file_suffix, 0, 0, _mx_nid);
+		load_vec_from_file(_sum_expo_prob[0], file_prefix+"-expo-"+file_suffix, 0, 0, _mx_nid);
 		}
 		#pragma omp section
 		{
 		_sum_co_expo_prob = std::vector<MatFlt>(1);
-		load_lower_triad_mat(_sum_co_expo_prob[0], file_prefix+"-co_expo_prob_"+file_suffix, _mx_nid);
+		load_lower_triad_mat(_sum_co_expo_prob[0], file_prefix+"-co_expo-"+file_suffix, _mx_nid);
 		}
 		#pragma omp section
 		{
 		_sum_adv_expo_prob = std::vector<MatFlt>(1);
-		load_lower_triad_mat(_sum_adv_expo_prob[0], file_prefix+"-adv_expo_prob_"+file_suffix, _mx_nid);
+		load_lower_triad_mat(_sum_adv_expo_prob[0], file_prefix+"-co_expo-"+file_suffix, _mx_nid);
 		}
 		}
 	}
