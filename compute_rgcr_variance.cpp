@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
   double e = 0.1;
   double GATE = 1.0;
   bool additive_ATE = true;
+  std::string output_file_suffix = "";
 
   extern char *optarg;
   int opt;
