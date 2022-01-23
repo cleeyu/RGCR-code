@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   std::cout << rand() << ' ' << rand() << ' ' << rand() << std::endl << std::endl;
 
   std::string usage_msg = "Usage: ./" + std::string(argv[0]);
-  usage_msg += " -g path_graph_name[synthetic/small_world/SW-2D_32_1_PL-id]";
+  usage_msg += " -g path_graph_name[SW32]";
   usage_msg += " -c clustering_method[nbr_max-1]";
   usage_msg += " -w clustering_weight[uniform]";
   usage_msg += " -h estimator_type[Hajek]";
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
   usage_msg += " -o output_file_suffix[""]";
 
   // Default run parameters.
-  std::string path_graph_name = "synthetic/small_world/SW-2D_32_1_PL-id";
+  std::string path_graph_name = "SW32";
   std::string clustering_method = "nbr_max-1";
   std::string clustering_node_w_opt = "uniform";
   std::string est_type_str = "Hajek";

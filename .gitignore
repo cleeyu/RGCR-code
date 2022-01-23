@@ -4,9 +4,9 @@ results*
 post_analysis
 
 estimate_rgcr_expo_prob
-eval_prob_formula
-eval_prob_simulation
-simulate_GCR_variance
+compute_rgcr_variance
+simulate_rgcr_variance
+simulate_gcr_variance
 
 commands*
 zz_useless.cpp

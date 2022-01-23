@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   std::cout << rand() << ' ' << rand() << ' ' << rand() << std::endl << std::endl;
 
   std::string usage_msg = "Usage: ./" + std::string(argv[0]);
-  usage_msg += " -g path_graph_name[synthetic/small_world/SW-2D_32_1_PL-id]";
+  usage_msg += " -g path_graph_name[SW32]";
   usage_msg += " -c clustering_method[nbr_max-1-uniform]";
   usage_msg += " -s file_suffix[3-0.txt]";
   usage_msg += " -r use_complete_rand[false]";
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
   usage_msg += " -m multiplicative_ATE[false]";
 
   // Default run parameters.
-  std::string path_graph_name = "synthetic/small_world/SW-2D_32_1_PL-id";
+  std::string path_graph_name = "SW32";
   std::string clustering_method = "nbr_max-1-uniform";
   std::string file_suffix = "3-0.txt";
   bool use_complete_rand = false;

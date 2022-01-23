@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
   usage_msg += " -s(if using stratified clustering sampling [false])";
 
   // Default run parameters.
-  std::string path_graph_name = "Sample/SampleGraph";
+  std::string path_graph_name = "SW32";
   std::string clustering_method = "r_net-3";
   std::string clustering_node_w_opt = "uniform";
   int n_samples = 100;
