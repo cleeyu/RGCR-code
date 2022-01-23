@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 
   std::string usage_msg = "Usage: ./" + std::string(argv[0]);
   usage_msg += " -g path_graph_name[SW32]";
-  usage_msg += " -c clustering_method[nbr_max-1]";
+  usage_msg += " -c clustering_method[r_net-3]";
   usage_msg += " -w clustering_weight[uniform]";
   usage_msg += " -s file_suffix[3-0.txt]";
   usage_msg += " -r use_complete_rand[false]";
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
   // Default run parameters.
   std::string path_graph_name = "SW32";
-  std::string clustering_method = "nbr_max-1";
+  std::string clustering_method = "r_net-3";
   std::string clustering_node_w_opt = "uniform";
   std::string file_suffix = "3-0.txt";
   bool use_complete_rand = false;

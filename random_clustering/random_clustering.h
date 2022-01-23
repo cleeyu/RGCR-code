@@ -29,7 +29,7 @@ class RandomClustering {
 	}
 
 	void gen_partition(VecFlt& partition, int priority_node = -1) const {
-		if (_alg == "nbr_max") {
+		if (_alg == "r_hop_max") {
 			gen_nbr_max(partition, priority_node);
 		} else if (_alg == "r_net") {
 			gen_r_net(partition, priority_node);
