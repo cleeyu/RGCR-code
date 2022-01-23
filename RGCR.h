@@ -126,7 +126,6 @@ class RGCR {
 		}
 		if (mixing_levels.back() != n_samples) {
 			std::cout << "Input n_samples must be a power of 10, but is " << n_samples << ". Use " << mixing_levels.back() << " instead." << std::endl;
-			n_rounds = mixing_levels.back();
 		}
 		independent_mixing_analysis_specified(random_clustering, mixing_levels, use_complete_rand, run_id);
 	}
