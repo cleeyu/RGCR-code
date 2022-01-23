@@ -388,12 +388,12 @@ class RGCR {
 	// }
 
 	void load_default_node_response() {
-		a = 1.0;
-		b = 0.5;
-		e = 0.1;
-		multiply_deg = true;
-		tau = 1.0;
-		is_additive = false;
+		double a = 1.0;
+		double b = 0.5;
+		double e = 0.1;
+		bool multiply_deg = true;
+		double tau = 1.0;
+		bool is_additive = false;
 		load_base_response(a, b, e, multiply_deg);
 		load_treatment_response(tau, is_additive);
 
