@@ -102,9 +102,9 @@ int main(int argc, char **argv) {
 
   std::string output_file_name = "variances-" + est_type_str;
   if (output_file_suffix != "") {
-    output_file_suffix += "-" + output_file_suffix;
+    output_file_name += "-" + output_file_suffix;
   }
-  output_file_suffix += ".txt";
+  output_file_name += ".txt";
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
   rgcr.compute_var_given_expo_prob(clustering_method, use_complete_rand, file_suffix, est_type_str, file_out);

@@ -111,9 +111,9 @@ int main(int argc, char **argv) {
 
   std::string output_file_name = "simulation-" + est_type_str;
   if (output_file_suffix != "") {
-    output_file_suffix += "-" + output_file_suffix;
+    output_file_name += "-" + output_file_suffix;
   }
-  output_file_suffix += ".txt";
+  output_file_name += ".txt";
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
   RandomClustering random_clustering(g, path_graph_name, clustering_method, clustering_node_w_opt);
