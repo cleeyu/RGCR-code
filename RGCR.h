@@ -944,7 +944,7 @@ class RGCR {
 		#pragma omp section
 		{
 		_sum_adv_expo_prob = std::vector<MatFlt>(1);
-		load_lower_triad_mat(_sum_adv_expo_prob[0], file_prefix+"-co_expo-"+file_suffix, _mx_nid);
+		load_lower_triad_mat(_sum_adv_expo_prob[0], file_prefix+"-adv_expo-"+file_suffix, _mx_nid);
 		}
 		}
 	}
