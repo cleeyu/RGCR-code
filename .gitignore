@@ -10,7 +10,7 @@ simulate_gcr_variance
 
 commands*
 zz_useless.cpp
-*ipynb*
+.ipynb*
 
 *.ungraph
 
