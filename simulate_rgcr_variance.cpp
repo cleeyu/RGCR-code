@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
   RGCR rgcr(g, path_graph_name, false);
   rgcr.load_node_response(a, b, e, GATE, additive_ATE);
 
-  std::string output_file_name = "simulation-" + est_type_str;
+  std::string output_file_name = "results/simulation-" + est_type_str;
   if (output_file_suffix != "") {
     output_file_name += "-" + output_file_suffix;
   }
