@@ -109,7 +109,11 @@ int main(int argc, char **argv) {
   RGCR rgcr(g, path_graph_name, false);
   rgcr.load_node_response(a, b, e, GATE, additive_ATE);
 
-  std::string output_file_name = "simulation-" + est_type_str + output_file_suffix + ".txt";
+  std::string output_file_name = "simulation-" + est_type_str;
+  if (output_file_suffix != "") {
+    output_file_suffix += "-" + output_file_suffix;
+  }
+  output_file_suffix += ".txt";
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
   RandomClustering random_clustering(g, path_graph_name, clustering_method, clustering_node_w_opt);

@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 
   usage_msg += " -s file_suffix[mix128n-0.txt]";
   usage_msg += " -r use_complete_rand[false]";
-  usage_msg += " -h estimator_type[Hajek]";
+  usage_msg += " -h estimator_type[HT]";
 
   usage_msg += " -a base_response[1]";
   usage_msg += " -b drift_coef[0.5]";
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
   std::string clustering_method = "r_net-3-uniform";
   std::string file_suffix = "mix128n-0.txt";
   bool use_complete_rand = false;
-  std::string est_type_str = "Hajek";
+  std::string est_type_str = "HT";
   double a = 1;
   double b = 0.5;
   double e = 0.1;
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
   extern char *optarg;
   int opt;
-  while ((opt = getopt(argc, argv, "g:c:s:rha:b:e:t:m")) != -1) {
+  while ((opt = getopt(argc, argv, "g:c:s:rha:b:e:t:mo:")) != -1) {
     switch (opt) {
       case 'g':
         path_graph_name = optarg;
@@ -100,7 +100,11 @@ int main(int argc, char **argv) {
   RGCR rgcr(g, path_graph_name, false);
   rgcr.load_node_response(a, b, e, GATE, additive_ATE);
 
-  std::string output_file_name = "variances-" + est_type_str + output_file_suffix + ".txt";
+  std::string output_file_name = "variances-" + est_type_str;
+  if (output_file_suffix != "") {
+    output_file_suffix += "-" + output_file_suffix;
+  }
+  output_file_suffix += ".txt";
   std::ofstream file_out(output_file_name, std::ofstream::app);
   file_out << run_name << std::endl;
   rgcr.compute_var_given_expo_prob(clustering_method, use_complete_rand, file_suffix, est_type_str, file_out);
