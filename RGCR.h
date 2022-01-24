@@ -258,7 +258,11 @@ class RGCR {
 		load_expo_prob(file_prefix, file_suffix);
 		double var_1 = 0, var_2 = 0;
 		compute_mixing_var_12(0, 1, var_1, var_2, est_type==HAJEK);
-		out << var_1 << '\t' << var_2 << '\t' << var_1 + var_2 << std::endl;
+		// var_1 is the sum of single-terms in the variance formula, and
+		// var_2 is the sum of cross-terms in the variance formula. 
+		// Here we only output their sum, which is the variance.
+		out << var_1 + var_2 << std::endl;
+		// out << var_1 << '\t' << var_2 << '\t' << var_1 + var_2 << std::endl;
 	}
 
 	void simulate_var_given_expo_prob(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, 
