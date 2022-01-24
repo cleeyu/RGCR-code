@@ -38,12 +38,19 @@ class RGCR {
 		check_graph_validity(_g);
 		_mx_nid = _g->GetMxNId();
 		if (load_default_response) {
-			load_default_node_response();
+			// load_default_node_response();
+			double a = 1.0;
+			double b = 0.5;
+			double e = 0.1;
+			bool multiply_deg = true;
+			double tau = 1.0;
+			bool is_additive = false;
+			load_node_response(a, b, e, tau, is_additive, multiply_deg);
 		}
 	}
 
-	void load_node_response(double a, double b, double e, double tau, bool is_additive) {
-		load_base_response(a, b, e, true);
+	void load_node_response(double a, double b, double e, double tau, bool is_additive, bool multiply_deg=true) {
+		load_base_response(a, b, e, multiply_deg);
 		load_treatment_response(tau, is_additive);
 	}
 
@@ -391,25 +398,25 @@ class RGCR {
 	// 	}
 	// }
 
-	void load_default_node_response() {
-		double a = 1.0;
-		double b = 0.5;
-		double e = 0.1;
-		bool multiply_deg = true;
-		double tau = 1.0;
-		bool is_additive = false;
-		load_base_response(a, b, e, multiply_deg);
-		load_treatment_response(tau, is_additive);
+	// void load_default_node_response() {
+	// 	double a = 1.0;
+	// 	double b = 0.5;
+	// 	double e = 0.1;
+	// 	bool multiply_deg = true;
+	// 	double tau = 1.0;
+	// 	bool is_additive = false;
+	// 	load_base_response(a, b, e, multiply_deg);
+	// 	load_treatment_response(tau, is_additive);
 
-		if (IS_DEBUG) {
-			std::cout << "response_0:" << std::endl;
-			print_vector(_node_response_0);
-			std::cout << "mu(0) = " << _mu0 << std::endl;
-			std::cout << "response_1:" << std::endl;
-			print_vector(_node_response_1);
-			std::cout << "mu(1) = " << _mu1 << std::endl;
-		}
-	}
+	// 	if (IS_DEBUG) {
+	// 		std::cout << "response_0:" << std::endl;
+	// 		print_vector(_node_response_0);
+	// 		std::cout << "mu(0) = " << _mu0 << std::endl;
+	// 		std::cout << "response_1:" << std::endl;
+	// 		print_vector(_node_response_1);
+	// 		std::cout << "mu(1) = " << _mu1 << std::endl;
+	// 	}
+	// }
 
 	void load_base_response(double a, double b, double e, bool multiply_deg=true) {
 		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
