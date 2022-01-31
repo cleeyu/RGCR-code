@@ -3,6 +3,8 @@
 results*
 post_analysis
 
+dataset/FB100*
+
 estimate_rgcr_expo_prob
 compute_rgcr_variance
 simulate_rgcr_variance
