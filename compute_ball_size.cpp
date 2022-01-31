@@ -10,8 +10,8 @@ int main(int argc, char **argv) {
     PGName = argv[1];
   }
 
-  BallSize ball_size(PGName);
-  ball_size.get_all_nodes_ball_size();
+  BallSize ballsize(PGName);
+  ballsize.get_all_nodes_ball_size();
 
   return 0;
 }
