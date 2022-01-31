@@ -1,9 +1,5 @@
 #include "ball_size.h"
 
-std::string ERR_USAGE_MSG = "Usage: ./compute_ball_size <path/graph>";
-
-
-
 
 
 int main(int argc, char **argv) {
@@ -14,8 +10,8 @@ int main(int argc, char **argv) {
     PGName = argv[1];
   }
 
-  NetworkStatistics ns(PGName);
-  ns.get_all_nodes_ball_size();
+  BallSize ball_size(PGName);
+  ball_size.get_all_nodes_ball_size();
 
   return 0;
 }

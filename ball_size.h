@@ -8,18 +8,15 @@
 
 #include <utils/utils_snap.h>
 
-static const std::string OUTPUT_PATH = "results/ball_size/";
-static const int MAX_SAMPLE_SIZE = 100000;
+// static const int MAX_SAMPLE_SIZE = 100000;
 
 
-
-class NetworkStatistics {
+class BallSize {
 public:
-	NetworkStatistics(const std::string&  path_graph_name)
+	BallSize(const std::string&  path_graph_name)
 		: _path_graph_name(path_graph_name) {
 		_g = read_undirected_graph(DATA_PATH + _path_graph_name);
 		parse_path_file_name(_path_graph_name, _path, _graph_name);
-//         std::cout << _path << ' ' << _graph_name << std::endl;
 		_max_nid = _g->GetMxNId();
 	}
 
@@ -30,7 +27,7 @@ public:
 		//    (3) contains no self-loops.
 		check_graph_validity(_g);
 
-		// Compute the size of each ball centering around every node.
+		// Compute the size of each ball centered at every node.
 		MatInt ball_sizes(_max_nid);
 		size_t diameter = 0;
 // 		double sample_prob = 1;
@@ -51,6 +48,7 @@ public:
 		}
 
 		// Print the size of each ball centered at every node.
+		const std::string OUTPUT_PATH = "results/ball_size/";
 		int status = system(("mkdir -p " + OUTPUT_PATH + _path).c_str());
 		std::string output_file = OUTPUT_PATH + _path_graph_name + "-ball_size.txt";
 		std::ofstream fout(output_file);
