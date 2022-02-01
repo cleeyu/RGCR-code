@@ -1,8 +1,8 @@
 #ifndef random_clustering_h
 #define random_clustering_h
 
-#include "../utils/utils.h"
-#include "../utils/utils_snap.h"
+#include "utils/utils.h"
+#include "utils/utils_snap.h"
 
 
 
