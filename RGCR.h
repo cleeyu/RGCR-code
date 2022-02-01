@@ -192,58 +192,6 @@ class RGCR {
 		print_result_to_file(_bias_single, _variance_single, "single.txt");
 	}
 
-	void simulate_GCR_variance_distribution(RandomClustering& random_clustering, int n_clusterings, int n_samples, 
-		const std::string& est_type_str, std::ostream& out = std::cout) {
-		out << "GATE = " << _mu1 - _mu0 << std::endl;
-		for (int clustering_i = 0; clustering_i < n_clusterings; clustering_i++) {
-			VecFlt partition;
-			random_clustering.gen_partition(partition);
-			simulate_GCR_variance(partition, n_samples, est_type_str, out);
-		}
-	}
-
-	void simulate_GCR_variance(const VecFlt& partition, int n_samples, const std::string& est_type_str, std::ostream& out = std::cout) {
-		// GCR only supports independent randomization, not complete randomization.
-		initialize_mixing_analysis(1);
-		analyze_partition_ind(partition);
-		EstimatorType est_type = parse_estimator_type(est_type_str);
-		// if (est_type != HT) {
-		// 	compute_normalizer(est_type);
-		// }
-
-		double tau_gt = _mu1 - _mu0;
-		double sum_bias = 0;
-		double sum_SE = 0;
-		double sum_QE = 0;
-		#pragma omp parallel num_threads(N_THREADS) 
-		{
-		#pragma omp for reduction (+:sum_bias,sum_SE,sum_QE)
-		for (int sample_i = 0; sample_i < n_samples; sample_i++) {
-			double hat_tau_1, hat_tau_2;
-			if (est_type == HT) {
-				simulate_HT(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
-			} else {
-				simulate_Hajek(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
-			}
-			sum_bias += hat_tau_1 + hat_tau_2 - 2 * tau_gt;
-			double SE_1 = (hat_tau_1 - tau_gt) * (hat_tau_1 - tau_gt);
-			double SE_2 = (hat_tau_2 - tau_gt) * (hat_tau_2 - tau_gt);
-			sum_SE += SE_1 + SE_2;
-			sum_QE += SE_1*SE_1 + SE_2*SE_2;
-		}
-		}
-		sum_bias /= n_samples * 2;
-		sum_SE /= n_samples * 2;
-		sum_QE /= n_samples * 2;
-
-		out << sum_bias << '\t' << sqrt((sum_SE - sum_bias*sum_bias) / n_samples) << '\t';
-		out << sum_SE << '\t' << sqrt((sum_QE - sum_SE*sum_SE) / n_samples);
-		if (est_type == HT) {
-			out << '\t' << _variance_single[0];
-		}
-		out << std::endl;
-	}
-
 	void compute_var_given_expo_prob(const std::string& clustering_method, bool use_complete_rand, const std::string& file_suffix, 
 		const std::string& est_type_str, std::ostream& out = std::cout)	{
 		EstimatorType est_type = parse_estimator_type(est_type_str);
@@ -318,6 +266,16 @@ class RGCR {
 		out << mse << '\t' << sqrt(var_mse) << std::endl;
 	}
 
+	void simulate_GCR_variance_distribution(RandomClustering& random_clustering, int n_clusterings, int n_samples, 
+		const std::string& est_type_str, std::ostream& out = std::cout) {
+		out << "GATE = " << _mu1 - _mu0 << std::endl;
+		for (int clustering_i = 0; clustering_i < n_clusterings; clustering_i++) {
+			VecFlt partition;
+			random_clustering.gen_partition(partition);
+			simulate_GCR_variance(partition, n_samples, est_type_str, out);
+		}
+	}
+
  private:
 	PUNGraph _g;
 	std::string _path_graph_name, _output_file_directory, _clustering_method;
@@ -335,6 +293,7 @@ class RGCR {
 	MatFlt _bias_mixing;	// List of biases at each mixing level instance.
 
 
+  // Basic I/O functions.
 	void load_base_response(double a, double b, double e, bool multiply_deg=true) {
 		std::string response_file_name = DATA_PATH + _path_graph_name + "-response.txt";
 		VecFlt drift, noise;
@@ -413,27 +372,8 @@ class RGCR {
 		status = system(("mkdir -p " + _output_file_directory + "expo_prob").c_str());
 	}
 
-	void initialize_mixing_analysis(int n_mixing_levels) {
-		_sum_expo_prob = std::vector<VecFlt>(n_mixing_levels);
-		_sum_co_expo_prob = std::vector<MatFlt>(n_mixing_levels);
-		_sum_adv_expo_prob = std::vector<MatFlt>(n_mixing_levels);
-		for (int k = 0; k < n_mixing_levels; k ++) {
-			_sum_expo_prob[k] = VecFlt(_mx_nid);
-			_sum_co_expo_prob[k] = MatFlt(_mx_nid);
-			_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
-			for (int i = 0; i < _mx_nid; i ++) {
-				_sum_co_expo_prob[k][i] = VecFlt(i);
-				_sum_adv_expo_prob[k][i] = VecFlt(i);
-			}
-		}
-		_variance_single.clear();
-		_variance_single.reserve(N_EXAMPLES_PER_PRINT);
-		_variance_mixing = std::vector<VecFlt>(n_mixing_levels);
-		_bias_single.clear();
-		_bias_single.reserve(N_EXAMPLES_PER_PRINT);
-		_bias_mixing = std::vector<VecFlt>(n_mixing_levels);
-	}
 
+  // Analyze a partition under independent or complete randomization.
 	void analyze_partition_ind(const VecFlt& partition, double partition_wt = 1) {
 		// Step 1: populate the following data structures:
 		// cluster_to_adjacent_nodes[f] is the set of nodes whose B_1(i) intersects with cluster f.
@@ -510,16 +450,6 @@ class RGCR {
 
 		// Step 4: push the analysis result.
 		summarize_partition_analysis(partition, bias_p, variance_p);
-	}
-
-	void summarize_partition_analysis(const VecFlt& partition, double bias, double variance) {
-		_bias_single.push_back(bias);
-		_variance_single.push_back(variance);
-		if (_variance_single.size() >= N_EXAMPLES_PER_PRINT) {
-			print_result_to_file(_bias_single, _variance_single, "single.txt");
-			_bias_single.clear();
-			_variance_single.clear();
-		}
 	}
 
 	void pair_clusters(const std::unordered_map<double, int>& cluster_sz, 
@@ -667,6 +597,39 @@ class RGCR {
 		summarize_partition_analysis(partition, bias_p, variance_p);
 	}
 
+	void summarize_partition_analysis(const VecFlt& partition, double bias, double variance) {
+		_bias_single.push_back(bias);
+		_variance_single.push_back(variance);
+		if (_variance_single.size() >= N_EXAMPLES_PER_PRINT) {
+			print_result_to_file(_bias_single, _variance_single, "single.txt");
+			_bias_single.clear();
+			_variance_single.clear();
+		}
+	}
+
+
+  // Analyze a mixing of partitions (based on the average exposure probabilities).
+	void initialize_mixing_analysis(int n_mixing_levels) {
+		_sum_expo_prob = std::vector<VecFlt>(n_mixing_levels);
+		_sum_co_expo_prob = std::vector<MatFlt>(n_mixing_levels);
+		_sum_adv_expo_prob = std::vector<MatFlt>(n_mixing_levels);
+		for (int k = 0; k < n_mixing_levels; k ++) {
+			_sum_expo_prob[k] = VecFlt(_mx_nid);
+			_sum_co_expo_prob[k] = MatFlt(_mx_nid);
+			_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
+			for (int i = 0; i < _mx_nid; i ++) {
+				_sum_co_expo_prob[k][i] = VecFlt(i);
+				_sum_adv_expo_prob[k][i] = VecFlt(i);
+			}
+		}
+		_variance_single.clear();
+		_variance_single.reserve(N_EXAMPLES_PER_PRINT);
+		_variance_mixing = std::vector<VecFlt>(n_mixing_levels);
+		_bias_single.clear();
+		_bias_single.reserve(N_EXAMPLES_PER_PRINT);
+		_bias_mixing = std::vector<VecFlt>(n_mixing_levels);
+	}
+
 	double compute_mixing_bias(int vec_id) const {
 		double bias = 0;
 		for (int i = 0; i < _mx_nid; i++) {
@@ -732,6 +695,8 @@ class RGCR {
 		var_2 /= _mx_nid * _mx_nid;
 	}
 
+
+  // Result I/O functions.
 	void print_result_to_file(const VecFlt& biases, const VecFlt& variances, const std::string& file_suffix) const {
 		if (biases.size() != variances.size()) {
 			throw std::invalid_argument("Bias and variance should have the same length");
@@ -816,6 +781,8 @@ class RGCR {
 		}
 	}
 
+
+  // Related with simulations.
 	void assign_treatment_control(const VecFlt& partition, bool use_complete_rand, std::unordered_map<double, int>& assignment, int priority_node=-1) const {
 		// cluster_sz[f] is the size of cluster f (number of nodes).
 		std::unordered_map<double, int> cluster_sz;
@@ -932,8 +899,50 @@ class RGCR {
 		hat_tau_1 = hat_mu_1_1 - hat_mu_0_1;
 		hat_tau_2 = hat_mu_1_2 - hat_mu_0_2;
 	}
-};
 
+	void simulate_GCR_variance(const VecFlt& partition, int n_samples, const std::string& est_type_str, std::ostream& out = std::cout) {
+		// GCR only supports independent randomization, not complete randomization.
+		initialize_mixing_analysis(1);
+		analyze_partition_ind(partition);
+		EstimatorType est_type = parse_estimator_type(est_type_str);
+		// if (est_type != HT) {
+		// 	compute_normalizer(est_type);
+		// }
+
+		double tau_gt = _mu1 - _mu0;
+		double sum_bias = 0;
+		double sum_SE = 0;
+		double sum_QE = 0;
+		#pragma omp parallel num_threads(N_THREADS) 
+		{
+		#pragma omp for reduction (+:sum_bias,sum_SE,sum_QE)
+		for (int sample_i = 0; sample_i < n_samples; sample_i++) {
+			double hat_tau_1, hat_tau_2;
+			if (est_type == HT) {
+				simulate_HT(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
+			} else {
+				simulate_Hajek(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
+			}
+			sum_bias += hat_tau_1 + hat_tau_2 - 2 * tau_gt;
+			double SE_1 = (hat_tau_1 - tau_gt) * (hat_tau_1 - tau_gt);
+			double SE_2 = (hat_tau_2 - tau_gt) * (hat_tau_2 - tau_gt);
+			sum_SE += SE_1 + SE_2;
+			sum_QE += SE_1*SE_1 + SE_2*SE_2;
+		}
+		}
+		sum_bias /= n_samples * 2;
+		sum_SE /= n_samples * 2;
+		sum_QE /= n_samples * 2;
+
+		out << sum_bias << '\t' << sqrt((sum_SE - sum_bias*sum_bias) / n_samples) << '\t';
+		out << sum_SE << '\t' << sqrt((sum_QE - sum_SE*sum_SE) / n_samples);
+		if (est_type == HT) {
+			out << '\t' << _variance_single[0];
+		}
+		out << std::endl;
+	}
+
+};
 
 
 #endif	// RGCR_h
