@@ -139,10 +139,6 @@ class RandomClustering {
 			return;
 		}
 		load_vec_from_file(_node_weight, input_file, col, 1, _mx_nid);
-		if (IS_DEBUG) {
-			std::cout << "node weights:" << std::endl;
-			print_vector(_node_weight);
-		}
 	}
 
 	void gen_nbr_max(VecFlt& partition, int priority_node = -1) const {
@@ -152,10 +148,6 @@ class RandomClustering {
 		if (priority_node != -1) {
 			assert(_g->IsNode(priority_node));
 			node_num[priority_node] = DBL_MAX;
-		}
-		if (IS_DEBUG) {
-			std::cout << "generated node numbers:" << std::endl;
-			print_vector(node_num);
 		}
 
 		assign_nbr_max_1_hop(partition, node_num);
@@ -189,15 +181,7 @@ class RandomClustering {
 		// Step 1: generate a seed set from random maximal distance-r independent set.
 		VecInt seeds;
 		get_max_r_independent_set(seeds, _param, priority_node);
-		if (IS_DEBUG) {
-			std::cout << "Seeds: ";
-			print_vector(seeds);
-		}
 		obtain_tie_breaking(seeds);
-		if (IS_DEBUG) {
-			std::cout << "Seeds: ";
-			print_vector(seeds);
-		}
 
 		// Step 2: broadcast around the seeds.
 		partition = VecFlt(_mx_nid, _mx_nid);

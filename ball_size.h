@@ -1,8 +1,3 @@
-/* 
- * This file provides the function to compute network statistics.
- */
-
-
 #ifndef ball_size
 #define ball_size
 
@@ -30,20 +25,12 @@ public:
 		// Compute the size of each ball centered at every node.
 		MatInt ball_sizes(_max_nid);
 		size_t diameter = 0;
-// 		double sample_prob = 1;
-// 		if (_max_nid > MAX_SAMPLE_SIZE) {
-// 			sample_prob = 1.0 * MAX_SAMPLE_SIZE / _max_nid;
-// 		}
 		#pragma omp parallel num_threads(N_THREADS) 
 		{
 		#pragma omp for reduction (max:diameter)
 		for (int node_id = 0; node_id < _max_nid; node_id++) {
-// 			std::bernoulli_distribution bern_rv(sample_prob);
-// 			std::default_random_engine random_eng(rand());
-// 			if (bern_rv(random_eng)) {
 				get_node_ball_size(node_id, ball_sizes[node_id]);
 				diameter = std::max(diameter, ball_sizes[node_id].size());
-// 			}
 		}
 		}
 
