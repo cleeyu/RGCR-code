@@ -3,7 +3,7 @@
 
 #include "utils/utils.h"
 #include "utils/utils_snap.h"
-#include "random_clustering/random_clustering.h"
+#include "random_clustering.h"
 
 static const int N_EXAMPLES_PER_PRINT = 100;
 
