@@ -1,6 +1,4 @@
-#include "random_clustering/random_clustering.h"
 #include "RGCR.h"
-
 
 
 int main(int argc, char **argv) {
