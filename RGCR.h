@@ -10,11 +10,13 @@ static const int N_EXAMPLES_PER_PRINT = 100;
 enum EstimatorType {
 	HT,
 	HAJEK,
+	LINEAR,
 };
 
 EstimatorType parse_estimator_type(const std::string& s) {
 	if (s == "HT") return HT;
 	else if (s == "Hajek") return HAJEK;
+	else if (s == "linear") return LINEAR;
 	else {
 		throw std::invalid_argument("Invalid estimator_type to parse!");		
 	}
@@ -30,19 +32,22 @@ class RGCR {
 			double b = 0.5;
 			double e = 0.1;
 			bool multiply_deg = true;
-			double tau = 1.0;
+			double delta = 0.5;
+			double gamma = 0.5;
 			bool is_additive = false;
-			load_node_response(a, b, e, tau, is_additive, multiply_deg);
+			load_node_response(a, b, e, delta, gamma, is_additive, multiply_deg);
 		}
 	}
 
-	void load_node_response(double a, double b, double e, double tau, bool is_additive, bool multiply_deg=true) {
+	void load_node_response(double a, double b, double e, double delta, double gamma, bool is_additive, bool multiply_deg=true) {
 		load_base_response(a, b, e, multiply_deg);
-		load_treatment_response(tau, is_additive);
+		load_treatment_response(delta + gamma, is_additive);
+		_delta = delta;
+		_gamma = gamma;
 	}
 
 	void independent_mixing_analysis_seq(RandomClustering& random_clustering, const std::vector<int>& mixing_levels, 
-		bool use_complete_rand, int run_id = 0) {
+		bool use_complete_rand, int run_id = 0, double treatment_prob = 0.5) {
 		get_output_directory(use_complete_rand, false);
 		_clustering_method = random_clustering.method();
 
@@ -63,7 +68,7 @@ class RGCR {
 			if (use_complete_rand) {
 				analyze_partition_complete(partition);
 			} else {
-				analyze_partition_ind(partition);
+				analyze_partition_ind(partition, 1, treatment_prob);
 			}
 			int k = 0;
 			while (k < n_mixing_levels && sample_i % mixing_levels[k] == 0) {
@@ -78,14 +83,22 @@ class RGCR {
 				}
 				if (k < n_mixing_levels - 1) {
 					add_vector(_sum_expo_prob[k+1], _sum_expo_prob[k]);
-					add_matrix(_sum_co_expo_prob[k+1], _sum_co_expo_prob[k]);
-					add_matrix(_sum_adv_expo_prob[k+1], _sum_adv_expo_prob[k]);
+					add_vector(_sum_expo_prob_control[k+1], _sum_expo_prob_control[k]);
+					add_matrix(_sum_co_expo_prob_00[k+1], _sum_co_expo_prob_00[k]);
+					add_matrix(_sum_co_expo_prob_11[k+1], _sum_co_expo_prob_11[k]);
+					add_matrix(_sum_adv_expo_prob_10[k+1], _sum_adv_expo_prob_10[k]);
+					add_matrix(_sum_adv_expo_prob_01[k+1], _sum_adv_expo_prob_01[k]);
 					_sum_expo_prob[k] = VecFlt(_mx_nid);
-					_sum_co_expo_prob[k] = MatFlt(_mx_nid);
-					_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
+					_sum_expo_prob_control[k] = VecFlt(_mx_nid);
+					_sum_co_expo_prob_00[k] = MatFlt(_mx_nid);
+					_sum_co_expo_prob_11[k] = MatFlt(_mx_nid);
+					_sum_adv_expo_prob_10[k] = MatFlt(_mx_nid);
+					_sum_adv_expo_prob_01[k] = MatFlt(_mx_nid);
 					for (int i = 0; i < _mx_nid; i++) {
-						_sum_co_expo_prob[k][i] = VecFlt(i);
-						_sum_adv_expo_prob[k][i] = VecFlt(i);
+						_sum_co_expo_prob_00[k][i] = VecFlt(i);
+						_sum_co_expo_prob_11[k][i] = VecFlt(i);
+						_sum_adv_expo_prob_10[k][i] = VecFlt(i);
+						_sum_adv_expo_prob_01[k][i] = VecFlt(i);
 					}
 				} else {
 					if (sample_i != mixing_levels[k]) {
@@ -112,7 +125,7 @@ class RGCR {
 		}
 	}
 
-	void independent_mixing_analysis(RandomClustering& random_clustering, int n_samples, bool use_complete_rand, int run_id = 0) {
+	void independent_mixing_analysis(RandomClustering& random_clustering, int n_samples, bool use_complete_rand, int run_id = 0, double treatment_prob=0.5) {
 		std::vector<int> mixing_levels;
 		int mix_level = 10;
 		while (mix_level <= n_samples) {
@@ -122,10 +135,10 @@ class RGCR {
 		if (mixing_levels.back() != n_samples) {
 			std::cout << "Input n_samples must be a power of 10, but is " << n_samples << ". Use " << mixing_levels.back() << " instead." << std::endl;
 		}
-		independent_mixing_analysis_seq(random_clustering, mixing_levels, use_complete_rand, run_id);
+		independent_mixing_analysis_seq(random_clustering, mixing_levels, use_complete_rand, run_id, treatment_prob);
 	}
 
-	void stratified_mixing_analysis(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, int run_id = 0) {
+	void stratified_mixing_analysis(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, int run_id = 0, double treatment_prob=0.5) {
 		get_output_directory(use_complete_rand, true);
 		_clustering_method = random_clustering.method();
 
@@ -156,7 +169,7 @@ class RGCR {
 				if (use_complete_rand) {
 					analyze_partition_complete(partition, random_clustering.node_weight(i));
 				} else {
-					analyze_partition_ind(partition, random_clustering.node_weight(i));
+					analyze_partition_ind(partition, random_clustering.node_weight(i), treatment_prob);
 				}
 			}
 			int k = 0;
@@ -171,14 +184,22 @@ class RGCR {
 
 				if (k < n_mixing_levels - 1) {
 					add_vector(_sum_expo_prob[k+1], _sum_expo_prob[k]);
-					add_matrix(_sum_co_expo_prob[k+1], _sum_co_expo_prob[k]);
-					add_matrix(_sum_adv_expo_prob[k+1], _sum_adv_expo_prob[k]);
+					add_vector(_sum_expo_prob_control[k+1], _sum_expo_prob_control[k]);
+					add_matrix(_sum_co_expo_prob_00[k+1], _sum_co_expo_prob_00[k]);
+					add_matrix(_sum_co_expo_prob_11[k+1], _sum_co_expo_prob_11[k]);
+					add_matrix(_sum_adv_expo_prob_10[k+1], _sum_adv_expo_prob_10[k]);
+					add_matrix(_sum_adv_expo_prob_01[k+1], _sum_adv_expo_prob_01[k]);
 					_sum_expo_prob[k] = VecFlt(_mx_nid);
-					_sum_co_expo_prob[k] = MatFlt(_mx_nid);
-					_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
+					_sum_expo_prob_control[k] = VecFlt(_mx_nid);
+					_sum_co_expo_prob_00[k] = MatFlt(_mx_nid);
+					_sum_co_expo_prob_11[k] = MatFlt(_mx_nid);
+					_sum_adv_expo_prob_10[k] = MatFlt(_mx_nid);
+					_sum_adv_expo_prob_01[k] = MatFlt(_mx_nid);
 					for (int i = 0; i < _mx_nid; i++) {
-						_sum_co_expo_prob[k][i] = VecFlt(i);
-						_sum_adv_expo_prob[k][i] = VecFlt(i);
+						_sum_co_expo_prob_00[k][i] = VecFlt(i);
+						_sum_co_expo_prob_11[k][i] = VecFlt(i);
+						_sum_adv_expo_prob_10[k][i] = VecFlt(i);
+						_sum_adv_expo_prob_01[k][i] = VecFlt(i);
 					}
 				} else {
 					if (round_i != mixing_levels[k]) {
@@ -208,7 +229,7 @@ class RGCR {
 	}
 
 	void simulate_var_given_expo_prob(RandomClustering& random_clustering, int n_rounds, bool use_complete_rand, 
-		const std::string& file_suffix, const std::string& est_type_str, std::ostream& out = std::cout) {
+		const std::string& file_suffix, const std::string& est_type_str, std::ostream& out = std::cout, double treatment_prob=0.5) {
 		get_output_directory(use_complete_rand, true);
 		_clustering_method = random_clustering.method();
 		std::string file_prefix = _output_file_directory + "expo_prob/" + _clustering_method;
@@ -233,19 +254,21 @@ class RGCR {
 			for (int i = 0; i < _mx_nid; i++) {
 				VecFlt partition;
 				random_clustering.gen_partition(partition, i);
-				double hat_tau_1, hat_tau_2;
+				double hat_tau_1; //, hat_tau_2;
+				std::unordered_map<double, int> assignment;
+				assign_treatment_control(partition, use_complete_rand, assignment, treatment_prob);
 				if (est_type == HT) {
-					simulate_HT(partition, use_complete_rand, hat_tau_1, hat_tau_2);
+					simulate_HT(partition, use_complete_rand, hat_tau_1, assignment);
 				} else {
-					simulate_Hajek(partition, use_complete_rand, hat_tau_1, hat_tau_2);
+					simulate_Hajek(partition, use_complete_rand, hat_tau_1, assignment);
 				}
 				double w_i = random_clustering.node_weight(i);
 				double SE_1 = (hat_tau_1 - tau_gt) * (hat_tau_1 - tau_gt);
-				double SE_2 = (hat_tau_2 - tau_gt) * (hat_tau_2 - tau_gt);
-				bias_r += w_i * (hat_tau_1 + hat_tau_2 - 2 * tau_gt);
-				var_bias_r += w_i * w_i * (SE_1 + SE_2);
-				mse_r += w_i * (SE_1 + SE_2);
-				var_mse_r += w_i * w_i * (SE_1*SE_1 + SE_2*SE_2);
+				//double SE_2 = (hat_tau_2 - tau_gt) * (hat_tau_2 - tau_gt);
+				bias_r += w_i * (hat_tau_1 - tau_gt); //+ hat_tau_2 - 2 * tau_gt);
+				var_bias_r += w_i * w_i * (SE_1); // + SE_2);
+				mse_r += w_i * (SE_1); // + SE_2);
+				var_mse_r += w_i * w_i * (SE_1*SE_1); // + SE_2*SE_2);
 			}
 			}
 			bias += bias_r;
@@ -253,26 +276,27 @@ class RGCR {
 			mse += mse_r;
 			var_mse += var_mse_r;
 		}
-		bias /= sum_partition_wt * n_rounds * 2;
-		var_bias /= sum_partition_wt * sum_partition_wt * n_rounds * 2 / _mx_nid;
+		// n_rounds = 2* n_rounds;
+		bias /= sum_partition_wt * n_rounds;
+		var_bias /= sum_partition_wt * sum_partition_wt * n_rounds  / _mx_nid;
 		var_bias -= bias * bias;
-		var_bias /= 2 * n_rounds * _mx_nid;
-		mse /= sum_partition_wt * n_rounds * 2;
-		var_mse /= sum_partition_wt * sum_partition_wt * n_rounds * 2 / _mx_nid;
+		var_bias /= n_rounds * _mx_nid;
+		mse /= sum_partition_wt * n_rounds;
+		var_mse /= sum_partition_wt * sum_partition_wt * n_rounds / _mx_nid;
 		var_mse -= mse * mse;
-		var_mse /= 2 * n_rounds * _mx_nid;
+		var_mse /= n_rounds * _mx_nid;
 
 		out << bias << '\t' << sqrt(var_bias) << '\t';
 		out << mse << '\t' << sqrt(var_mse) << std::endl;
 	}
 
 	void simulate_GCR_variance_distribution(RandomClustering& random_clustering, int n_clusterings, int n_samples, 
-		const std::string& est_type_str, std::ostream& out = std::cout) {
+		const std::string& est_type_str, std::ostream& out = std::cout, double treament_prob = 0.5) {
 		out << "GATE = " << _mu1 - _mu0 << std::endl;
 		for (int clustering_i = 0; clustering_i < n_clusterings; clustering_i++) {
 			VecFlt partition;
 			random_clustering.gen_partition(partition);
-			simulate_GCR_variance(partition, n_samples, est_type_str, out);
+			simulate_GCR_variance(partition, n_samples, est_type_str, out, treament_prob);
 		}
 	}
 
@@ -280,13 +304,17 @@ class RGCR {
 	PUNGraph _g;
 	std::string _path_graph_name, _output_file_directory, _clustering_method;
 	int _mx_nid;
-	VecFlt _node_response_0, _node_response_1;
+	VecFlt _node_response_0, _node_response_1, _node_response_obs;
 	double _mu0, _mu1;
+	double _delta, _gamma;
 	EstimatorType _estimator_type;
 
 	std::vector<VecFlt> _sum_expo_prob;	// _sum_expo_prob[k][u] = sum_{i=1} ^ mix[k] P_i(u).
-	std::vector<MatFlt> _sum_co_expo_prob;	// _sum_co_expo_prob[k][u][v] = sum_{i=1} ^ mix[k] P_i(u,v). (u > v)
-	std::vector<MatFlt> _sum_adv_expo_prob;	// _sum_adv_expo_prob[k][u][v] = sum_{i=1} ^ mix[k] P_i(u1,v0). (u > v)
+	std::vector<VecFlt> _sum_expo_prob_control;	// _sum_expo_prob[k][u] = sum_{i=1} ^ mix[k] P_i(u fully control).
+	std::vector<MatFlt> _sum_co_expo_prob_00;	// _sum_co_expo_prob_00[k][u][v] = sum_{i=1} ^ mix[k] P_i(u=0,v=0). (u > v)
+	std::vector<MatFlt> _sum_co_expo_prob_11;	// _sum_co_expo_prob_00[k][u][v] = sum_{i=1} ^ mix[k] P_i(u=1,v=1). (u > v)
+	std::vector<MatFlt> _sum_adv_expo_prob_10;	// _sum_adv_expo_prob_10[k][u][v] = sum_{i=1} ^ mix[k] P_i(u1,v0). (u > v)
+	std::vector<MatFlt> _sum_adv_expo_prob_01;	// _sum_adv_expo_prob_10[k][u][v] = sum_{i=1} ^ mix[k] P_i(u0,v1). (u > v)
 	VecFlt _variance_single;	// List of variances of each single partition instance.
 	MatFlt _variance_mixing;	// List of variances at each mixing level instance.
 	VecFlt _bias_single;	// List of biases of each single partition instance.
@@ -349,6 +377,25 @@ class RGCR {
 		_mu1 = std::accumulate(_node_response_1.begin(), _node_response_1.end(), 0.0) / _mx_nid;
 	}
 
+	void load_obs_response(double delta, double gamma, bool is_additive, std::unordered_map<double, int>& assignment, const VecFlt& partition) {
+		_node_response_obs.clear();
+		_node_response_obs.reserve(_mx_nid);
+
+		for (int i = 0; i < _mx_nid; i++) {
+			int a = assignment.at(partition[i]);
+			int treated_neighbors = 0;
+			TUNGraph::TNodeI NI = _g->GetNI(i);
+			for (int k = 0; k < NI.GetOutDeg(); k++) {
+				treated_neighbors += assignment.at(partition[NI.GetOutNId(k)]);
+			}
+			if (is_additive) {
+				_node_response_obs.push_back(_node_response_0[i] + a * delta + treated_neighbors * gamma / NI.GetOutDeg()); 
+			} else {
+				_node_response_obs.push_back(_node_response_0[i] * (1 + a * delta + treated_neighbors * gamma / NI.GetOutDeg())); 
+			}
+		}		
+	}
+
 	void get_output_directory(bool use_complete_rand, bool use_stratified_sampling) {
 		_output_file_directory = "results/";
 		if (use_complete_rand) {
@@ -373,8 +420,8 @@ class RGCR {
 	}
 
 
-  // Analyze a partition under independent or complete randomization.
-	void analyze_partition_ind(const VecFlt& partition, double partition_wt = 1) {
+    // Analyze a partition under independent or complete randomization.
+	void analyze_partition_ind(const VecFlt& partition, double partition_wt = 1, double treatment_prob = 0.5) {
 		// Step 1: populate the following data structures:
 		// cluster_to_adjacent_nodes[f] is the set of nodes whose B_1(i) intersects with cluster f.
 		std::unordered_map<double, std::unordered_set<int>> cluster_to_adjacent_nodes;
@@ -397,12 +444,15 @@ class RGCR {
 		// n_common_clusters[u][v] is the number of clusters intersects with both B_1(u) and B_1(v) (u > v)
 		std::vector<std::vector<int>> n_common_clusters(_mx_nid);
 		VecFlt expo_prob(_mx_nid);
+		VecFlt expo_prob_control(_mx_nid);
 		#pragma omp parallel num_threads(N_THREADS)
 		{
 		#pragma omp for
 		for (int i = 0; i < _mx_nid; i++) {
-			expo_prob[i] = std::pow(0.5, node_to_adjencent_clusters[i].size());
+			expo_prob[i] = std::pow(treatment_prob, node_to_adjencent_clusters[i].size());
 			_sum_expo_prob[0][i] += expo_prob[i] * partition_wt;
+			expo_prob_control[i] = std::pow(1-treatment_prob, node_to_adjencent_clusters[i].size());
+			_sum_expo_prob_control[0][i] += expo_prob_control[i] * partition_wt;
 
 			n_common_clusters[i] = std::vector<int>(i);
 			for (double cluster_id : node_to_adjencent_clusters[i]) {
@@ -425,22 +475,27 @@ class RGCR {
 		#pragma omp for reduction (+:variance_p)
 		for (int i = 0; i < _mx_nid; i++) {
 			double variance_i = 0;
-			variance_i += (1 / expo_prob[i] - 1) * _node_response_0[i] * _node_response_0[i];
+			variance_i += (1 / expo_prob_control[i] - 1) * _node_response_0[i] * _node_response_0[i];
 			variance_i += (1 / expo_prob[i] - 1) * _node_response_1[i] * _node_response_1[i];
 			variance_i += 2 * _node_response_0[i] * _node_response_1[i];
 
+			// CY: since we limit to j < i, the covariance is multiplied by 2
 			for (int j = 0; j < i; j++) {
 				double prod_prob = expo_prob[i] * expo_prob[j];
 				if (n_common_clusters[i][j] > 0) {
-					double score = std::pow(2, n_common_clusters[i][j]);
-					variance_i += 2 * (score - 1) * _node_response_0[i] * _node_response_0[j];
+					double score = std::pow(1/treatment_prob, n_common_clusters[i][j]);
+					double score_control = std::pow(1/(1-treatment_prob), n_common_clusters[i][j]);
+					variance_i += 2 * (score_control - 1) * _node_response_0[i] * _node_response_0[j];
 					variance_i += 2 * (score - 1) * _node_response_1[i] * _node_response_1[j];
-					variance_i += 2 * _node_response_0[i] * _node_response_1[j];
-					variance_i += 2 * _node_response_1[i] * _node_response_0[j];
-					_sum_co_expo_prob[0][i][j] += prod_prob * score * partition_wt;
+					variance_i += 2 * _node_response_0[i] * _node_response_1[j]; 
+					variance_i += 2 * _node_response_1[i] * _node_response_0[j]; 
+					_sum_co_expo_prob_11[0][i][j] += expo_prob[i] * expo_prob[j] * score * partition_wt;
+					_sum_co_expo_prob_00[0][i][j] += expo_prob_control[i] * expo_prob_control[j] * score_control * partition_wt;
 				} else {
-					_sum_co_expo_prob[0][i][j] += prod_prob * partition_wt;
-					_sum_adv_expo_prob[0][i][j] += prod_prob * partition_wt;
+					_sum_co_expo_prob_00[0][i][j] += expo_prob_control[i] * expo_prob_control[j] * partition_wt;
+					_sum_co_expo_prob_11[0][i][j] += expo_prob[i] * expo_prob[j] * partition_wt;
+					_sum_adv_expo_prob_10[0][i][j] += expo_prob[i] * expo_prob_control[j] * partition_wt;
+					_sum_adv_expo_prob_01[0][i][j] += expo_prob_control[i] * expo_prob[j] * partition_wt;
 				}
 			}
 			variance_p += variance_i;
@@ -570,7 +625,7 @@ class RGCR {
 					double dep_coef = std::pow(2, n_common);
 					variance_i += 2 * (dep_coef - 1) * _node_response_0[i] * _node_response_0[j];
 					variance_i += 2 * (dep_coef - 1) * _node_response_1[i] * _node_response_1[j];
-					_sum_co_expo_prob[0][i][j] += prod_prob * dep_coef * partition_wt;
+					_sum_co_expo_prob_00[0][i][j] += prod_prob * dep_coef * partition_wt;
 				} else {
 					// Not possible for both nodes exposed to treatment at the same time.
 					variance_i -= 2 * _node_response_0[i] * _node_response_0[j];
@@ -581,7 +636,7 @@ class RGCR {
 					double dep_coef = std::pow(2, n_conflict);
 					variance_i -= 2 * (dep_coef - 1) * _node_response_0[i] * _node_response_1[j];
 					variance_i -= 2 * (dep_coef - 1) * _node_response_0[j] * _node_response_1[i];
-					_sum_adv_expo_prob[0][i][j] += prod_prob * dep_coef * partition_wt;
+					_sum_adv_expo_prob_10[0][i][j] += prod_prob * dep_coef * partition_wt;
 				} else {
 					// Not possible for one exposed to treatment and the other to control.
 					variance_i += 2 * _node_response_0[i] * _node_response_1[j];
@@ -611,15 +666,23 @@ class RGCR {
   // Analyze a mixing of partitions (based on the average exposure probabilities).
 	void initialize_mixing_analysis(int n_mixing_levels) {
 		_sum_expo_prob = std::vector<VecFlt>(n_mixing_levels);
-		_sum_co_expo_prob = std::vector<MatFlt>(n_mixing_levels);
-		_sum_adv_expo_prob = std::vector<MatFlt>(n_mixing_levels);
+		_sum_expo_prob_control = std::vector<VecFlt>(n_mixing_levels);
+		_sum_co_expo_prob_00 = std::vector<MatFlt>(n_mixing_levels);
+		_sum_co_expo_prob_11 = std::vector<MatFlt>(n_mixing_levels);
+		_sum_adv_expo_prob_10 = std::vector<MatFlt>(n_mixing_levels);
+		_sum_adv_expo_prob_01 = std::vector<MatFlt>(n_mixing_levels);
 		for (int k = 0; k < n_mixing_levels; k ++) {
 			_sum_expo_prob[k] = VecFlt(_mx_nid);
-			_sum_co_expo_prob[k] = MatFlt(_mx_nid);
-			_sum_adv_expo_prob[k] = MatFlt(_mx_nid);
+			_sum_expo_prob_control[k] = VecFlt(_mx_nid);
+			_sum_co_expo_prob_00[k] = MatFlt(_mx_nid);
+			_sum_co_expo_prob_11[k] = MatFlt(_mx_nid);
+			_sum_adv_expo_prob_10[k] = MatFlt(_mx_nid);
+			_sum_adv_expo_prob_01[k] = MatFlt(_mx_nid);
 			for (int i = 0; i < _mx_nid; i ++) {
-				_sum_co_expo_prob[k][i] = VecFlt(i);
-				_sum_adv_expo_prob[k][i] = VecFlt(i);
+				_sum_co_expo_prob_00[k][i] = VecFlt(i);
+				_sum_co_expo_prob_11[k][i] = VecFlt(i);
+				_sum_adv_expo_prob_10[k][i] = VecFlt(i);
+				_sum_adv_expo_prob_01[k][i] = VecFlt(i);
 			}
 		}
 		_variance_single.clear();
@@ -634,7 +697,10 @@ class RGCR {
 		double bias = 0;
 		for (int i = 0; i < _mx_nid; i++) {
 			if (_sum_expo_prob[vec_id][i] == 0) {
-				bias += _node_response_1[i] - _node_response_0[i];
+				bias += _node_response_1[i];
+			}
+			if (_sum_expo_prob_control[vec_id][i] == 0) {
+				bias -= _node_response_0[i];
 			}
 		}
 		return bias / _mx_nid;
@@ -670,23 +736,42 @@ class RGCR {
 		{
 		#pragma omp for reduction (+:var_1,var_2)
 		for (int i = 0; i < _mx_nid; i++) {
-			if (_sum_expo_prob[vec_id][i] == 0) continue;
+			if (_sum_expo_prob[vec_id][i] + _sum_expo_prob_control[vec_id][i] == 0) continue;
 			double variance_1i = 0;
-			double expo_prob_i = _sum_expo_prob[vec_id][i] / n_mix;
-			variance_1i += (1 / expo_prob_i - 1) * node_response_0[i] * node_response_0[i];
-			variance_1i += (1 / expo_prob_i - 1) * node_response_1[i] * node_response_1[i];
-			variance_1i += 2 * node_response_1[i] * node_response_0[i];
+			if (_sum_expo_prob[vec_id][i] > 0) {
+				double expo_prob_i = _sum_expo_prob[vec_id][i] / n_mix;
+				variance_1i += (1 / expo_prob_i - 1) * node_response_1[i] * node_response_1[i];
+			}
+			if (_sum_expo_prob_control[vec_id][i] > 0) {
+				double expo_prob_control_i = _sum_expo_prob_control[vec_id][i] / n_mix;
+				variance_1i += (1 / expo_prob_control_i - 1) * node_response_0[i] * node_response_0[i];
+			}
+			if (_sum_expo_prob[vec_id][i] > 0 && _sum_expo_prob_control[vec_id][i] > 0) {
+				variance_1i += 2 * node_response_1[i] * node_response_0[i];
+			}
 			var_1 += variance_1i;
 			double variance_2i = 0;
 			for (int j = 0; j < i; j++) {
-				if (_sum_expo_prob[vec_id][j] == 0) continue;
 				double prod_prob = expo_prob_i * _sum_expo_prob[vec_id][j];
-				double score = _sum_co_expo_prob[vec_id][i][j] / prod_prob;
-				variance_2i += 2 * (score - 1) * node_response_0[i] * node_response_0[j];
-				variance_2i += 2 * (score - 1) * node_response_1[i] * node_response_1[j];
-				score = _sum_adv_expo_prob[vec_id][i][j] / prod_prob;
-				variance_2i -= 2 * (score - 1) * node_response_0[i] * node_response_1[j];
-				variance_2i -= 2 * (score - 1) * node_response_1[i] * node_response_0[j];
+				if (prod_prob > 0) {
+					double score = _sum_co_expo_prob_11[vec_id][i][j] / prod_prob;
+					variance_2i += 2 * (score - 1) * node_response_1[i] * node_response_1[j];
+				}
+				prod_prob = expo_prob_control_i * _sum_expo_prob_control[vec_id][j];
+				if (prod_prob > 0) {
+					score = _sum_co_expo_prob_00[vec_id][i][j] / prod_prob;
+					variance_2i += 2 * (score - 1) * node_response_0[i] * node_response_0[j];
+				}
+				prod_prob = expo_prob_i * _sum_expo_prob_control[vec_id][j];
+				if (prod_prob > 0) {
+					score = _sum_adv_expo_prob_10[vec_id][i][j] / prod_prob;
+					variance_2i -= 2 * (score - 1) * node_response_1[i] * node_response_0[j];
+				}
+				prod_prob = expo_prob_control_i * _sum_expo_prob[vec_id][j];
+				if (prod_prob > 0) {
+					score = _sum_adv_expo_prob_01[vec_id][i][j] / prod_prob;
+					variance_2i -= 2 * (score - 1) * node_response_0[i] * node_response_1[j];
+				}
 			}
 			var_2 += variance_2i;
 		}
@@ -736,9 +821,19 @@ class RGCR {
 		}
 		#pragma omp section
 		{
-		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-co_expo-" + file_suffix;
+		{
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-expo_control-" + file_suffix;
 		std::ofstream file_output(output_file_name);
-		for (const VecFlt& row : _sum_co_expo_prob[vec_id]) {
+		for (double v : _sum_expo_prob_control[vec_id]) {
+			file_output << v / n_mixing << std::endl;
+		}
+		file_output.close();
+		}
+		#pragma omp section
+		{
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-co_expo_00-" + file_suffix;
+		std::ofstream file_output(output_file_name);
+		for (const VecFlt& row : _sum_co_expo_prob_00[vec_id]) {
 			for (double v : row) {
 				file_output << v / n_mixing << '\t';
 			}
@@ -748,9 +843,33 @@ class RGCR {
 		}
 		#pragma omp section
 		{
-		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-adv_expo-" + file_suffix;
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-co_expo_11-" + file_suffix;
 		std::ofstream file_output(output_file_name);
-		for (const VecFlt& row : _sum_adv_expo_prob[vec_id]) {
+		for (const VecFlt& row : _sum_co_expo_prob_11[vec_id]) {
+			for (double v : row) {
+				file_output << v / n_mixing << '\t';
+			}
+			file_output << std::endl;
+		}
+		file_output.close();
+		}
+		#pragma omp section
+		{
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-adv_expo_10-" + file_suffix;
+		std::ofstream file_output(output_file_name);
+		for (const VecFlt& row : _sum_adv_expo_prob_10[vec_id]) {
+			for (double v : row) {
+				file_output << v / n_mixing << '\t';
+			}
+			file_output << std::endl;
+		}
+		file_output.close();
+		}
+		#pragma omp section
+		{
+		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-adv_expo_01-" + file_suffix;
+		std::ofstream file_output(output_file_name);
+		for (const VecFlt& row : _sum_adv_expo_prob_01[vec_id]) {
 			for (double v : row) {
 				file_output << v / n_mixing << '\t';
 			}
@@ -770,26 +889,42 @@ class RGCR {
 		}
 		#pragma omp section
 		{
-		_sum_co_expo_prob = std::vector<MatFlt>(1);
-		load_lower_triad_mat(_sum_co_expo_prob[0], file_prefix+"-co_expo-"+file_suffix, _mx_nid);
+		{
+		_sum_expo_prob_control = std::vector<VecFlt>(1);
+		load_vec_from_file(_sum_expo_prob_control[0], file_prefix+"-expo_control-"+file_suffix, 0, 0, _mx_nid);
 		}
 		#pragma omp section
 		{
-		_sum_adv_expo_prob = std::vector<MatFlt>(1);
-		load_lower_triad_mat(_sum_adv_expo_prob[0], file_prefix+"-adv_expo-"+file_suffix, _mx_nid);
+		_sum_co_expo_prob_00 = std::vector<MatFlt>(1);
+		load_lower_triad_mat(_sum_co_expo_prob_00[0], file_prefix+"-co_expo_00-"+file_suffix, _mx_nid);
+		}
+		#pragma omp section
+		{
+		_sum_co_expo_prob_11 = std::vector<MatFlt>(1);
+		load_lower_triad_mat(_sum_co_expo_prob_11[0], file_prefix+"-co_expo_11-"+file_suffix, _mx_nid);
+		}
+		#pragma omp section
+		{
+		_sum_adv_expo_prob_10 = std::vector<MatFlt>(1);
+		load_lower_triad_mat(_sum_adv_expo_prob_10[0], file_prefix+"-adv_expo_10-"+file_suffix, _mx_nid);
+		}
+		#pragma omp section
+		{
+		_sum_adv_expo_prob_01 = std::vector<MatFlt>(1);
+		load_lower_triad_mat(_sum_adv_expo_prob_01[0], file_prefix+"-adv_expo_01-"+file_suffix, _mx_nid);
 		}
 		}
 	}
 
 
   // Related with simulations.
-	void assign_treatment_control(const VecFlt& partition, bool use_complete_rand, std::unordered_map<double, int>& assignment, int priority_node=-1) const {
+	void assign_treatment_control(const VecFlt& partition, bool use_complete_rand, std::unordered_map<double, int>& assignment, int priority_node=-1, double treatment_prob=0.5) const {
 		// cluster_sz[f] is the size of cluster f (number of nodes).
 		std::unordered_map<double, int> cluster_sz;
 		for (int i = 0; i < _mx_nid; i++) {
 			cluster_sz[partition[i]]++;
 		}
-		std::bernoulli_distribution bern_rv(0.5);
+		std::bernoulli_distribution bern_rv(treatment_prob);
 		std::default_random_engine random_eng(rand());
 		assignment.clear();
 		if (use_complete_rand) {
@@ -823,13 +958,11 @@ class RGCR {
 		}
 	}
 
-	void simulate_Hajek(const VecFlt& partition, bool use_complete_rand, double& hat_tau_1, double& hat_tau_2) const {
-		std::unordered_map<double, int> assignment;
-		assign_treatment_control(partition, use_complete_rand, assignment);
-
+	// Removed double& hat_tau_2
+	void simulate_Hajek(const VecFlt& partition, bool use_complete_rand, double& hat_tau_1, std::unordered_map<double, int>& assignment) const {
 		double sum_inv_prob_0 = 0, sum_inv_prob_1 = 0;
 		double sum_inv_prob_response_0_1 = 0, sum_inv_prob_response_1_1 = 0;
-		double sum_inv_prob_response_0_2 = 0, sum_inv_prob_response_1_2 = 0;
+		//double sum_inv_prob_response_0_2 = 0, sum_inv_prob_response_1_2 = 0;
 		for (int i = 0; i < _mx_nid; i++) {
 			int a = assignment.at(partition[i]);
 			TUNGraph::TNodeI NI = _g->GetNI(i);
@@ -844,32 +977,30 @@ class RGCR {
 				if (a) {
 					sum_inv_prob_1 += 1 / _sum_expo_prob[0][i];
 					sum_inv_prob_response_1_1 += _node_response_1[i] / _sum_expo_prob[0][i];
-					sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i];
+					// sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i];
 				} else {
 					sum_inv_prob_0 += 1 / _sum_expo_prob[0][i];
 					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob[0][i];
-					sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i];
+					// sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i];
 				}
 			}
 		}
 		double hat_mu_0_1 = 0, hat_mu_1_1 = 0;
-		double hat_mu_0_2 = 0, hat_mu_1_2 = 0;
+		// double hat_mu_0_2 = 0, hat_mu_1_2 = 0;
 		if (sum_inv_prob_1 > 0) {
 			hat_mu_1_1 = sum_inv_prob_response_1_1 / sum_inv_prob_1;
-			hat_mu_0_2 = sum_inv_prob_response_0_2 / sum_inv_prob_1;
+			// hat_mu_0_2 = sum_inv_prob_response_0_2 / sum_inv_prob_1;
 		}
 		if (sum_inv_prob_0 > 0) {
 			hat_mu_0_1 = sum_inv_prob_response_0_1 / sum_inv_prob_0;
-			hat_mu_1_2 = sum_inv_prob_response_1_2 / sum_inv_prob_0;
+			// hat_mu_1_2 = sum_inv_prob_response_1_2 / sum_inv_prob_0;
 		}
 		hat_tau_1 = hat_mu_1_1 - hat_mu_0_1;
-		hat_tau_2 = hat_mu_1_2 - hat_mu_0_2;
+		//hat_tau_2 = hat_mu_1_2 - hat_mu_0_2;
 	}
 
-	void simulate_HT(const VecFlt& partition, bool use_complete_rand, double& hat_tau_1, double& hat_tau_2) const {
-		std::unordered_map<double, int> assignment;
-		assign_treatment_control(partition, use_complete_rand, assignment);
-
+	// Remove double& hat_tau_2
+	void simulate_HT(const VecFlt& partition, bool use_complete_rand, double& hat_tau_1, std::unordered_map<double, int>& assignment) const {
 		double sum_inv_prob_response_0_1 = 0, sum_inv_prob_response_1_1 = 0;
 		double sum_inv_prob_response_0_2 = 0, sum_inv_prob_response_1_2 = 0;
 		for (int i = 0; i < _mx_nid; i++) {
@@ -885,25 +1016,41 @@ class RGCR {
 			if (exposed) {
 				if (a) {
 					sum_inv_prob_response_1_1 += _node_response_1[i] / _sum_expo_prob[0][i];
-					sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i];
+					// sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i];
 				} else {
 					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob[0][i];
-					sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i];
+					// sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i];
 				}
 			}
 		}
 		double hat_mu_0_1 = sum_inv_prob_response_0_1 / _mx_nid;
 		double hat_mu_1_1 = sum_inv_prob_response_1_1 / _mx_nid;
-		double hat_mu_0_2 = sum_inv_prob_response_0_2 / _mx_nid;
-		double hat_mu_1_2 = sum_inv_prob_response_1_2 / _mx_nid;
+		//double hat_mu_0_2 = sum_inv_prob_response_0_2 / _mx_nid;
+		//double hat_mu_1_2 = sum_inv_prob_response_1_2 / _mx_nid;
 		hat_tau_1 = hat_mu_1_1 - hat_mu_0_1;
-		hat_tau_2 = hat_mu_1_2 - hat_mu_0_2;
+		//hat_tau_2 = hat_mu_1_2 - hat_mu_0_2;
 	}
 
-	void simulate_GCR_variance(const VecFlt& partition, int n_samples, const std::string& est_type_str, std::ostream& out = std::cout) {
+	void simulate_Linear(const VecFlt& partition, double& hat_tau, std::unordered_map<double, int>& assignment, double treatment_prob=0.5) const {
+		hat_tau = 0
+		for (int i = 0; i < _mx_nid; i++) {
+			double weight_i = 0;
+			int a = assignment.at(partition[i]);
+			weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
+			TUNGraph::TNodeI NI = _g->GetNI(i);
+			for (int k = 0; k < NI.GetOutDeg(); k++) {
+				a = assignment.at(partition[NI.GetOutNId(k)]);
+				weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
+			}
+			hat_tau += weight_i * _node_response_obs[i[]];
+		}
+		hat_tau = hat_tau / _mx_nid;
+	}
+
+	void simulate_GCR_variance(const VecFlt& partition, int n_samples, const std::string& est_type_str, std::ostream& out = std::cout, double treatment_prob=0.5) {
 		// GCR only supports independent randomization, not complete randomization.
 		initialize_mixing_analysis(1);
-		analyze_partition_ind(partition);
+		analyze_partition_ind(partition, 1, treatment_prob);
 		EstimatorType est_type = parse_estimator_type(est_type_str);
 		// if (est_type != HT) {
 		// 	compute_normalizer(est_type);
@@ -918,21 +1065,26 @@ class RGCR {
 		#pragma omp for reduction (+:sum_bias,sum_SE,sum_QE)
 		for (int sample_i = 0; sample_i < n_samples; sample_i++) {
 			double hat_tau_1, hat_tau_2;
+			std::unordered_map<double, int> assignment;
+			assign_treatment_control(partition, use_complete_rand, assignment, treatment_prob);
+			load_obs_response(_delta, _gamma, false, assignment, partition)
 			if (est_type == HT) {
-				simulate_HT(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
+				simulate_HT(partition, false, hat_tau_1, assignment);	// use_complete_rand=false
+			} else if (est_type == HAJEK) {
+				simulate_Hajek(partition, false, hat_tau_1, assignment);	// use_complete_rand=false
 			} else {
-				simulate_Hajek(partition, false, hat_tau_1, hat_tau_2);	// use_complete_rand=false
+				simulate_Linear(partition, hat_tau_1, assignment, treatment_prob);
 			}
-			sum_bias += hat_tau_1 + hat_tau_2 - 2 * tau_gt;
+			sum_bias += hat_tau_1  - tau_gt; // + hat_tau_2 - tau_gt;
 			double SE_1 = (hat_tau_1 - tau_gt) * (hat_tau_1 - tau_gt);
-			double SE_2 = (hat_tau_2 - tau_gt) * (hat_tau_2 - tau_gt);
-			sum_SE += SE_1 + SE_2;
-			sum_QE += SE_1*SE_1 + SE_2*SE_2;
+			//double SE_2 = (hat_tau_2 - tau_gt) * (hat_tau_2 - tau_gt);
+			sum_SE += SE_1; // + SE_2;
+			sum_QE += SE_1*SE_1; // + SE_2*SE_2;
 		}
 		}
-		sum_bias /= n_samples * 2;
-		sum_SE /= n_samples * 2;
-		sum_QE /= n_samples * 2;
+		sum_bias /= n_samples; // * 2;
+		sum_SE /= n_samples; // * 2;
+		sum_QE /= n_samples; // * 2;
 
 		out << sum_bias << '\t' << sqrt((sum_SE - sum_bias*sum_bias) / n_samples) << '\t';
 		out << sum_SE << '\t' << sqrt((sum_QE - sum_SE*sum_SE) / n_samples);
