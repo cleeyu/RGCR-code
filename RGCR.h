@@ -389,9 +389,9 @@ class RGCR {
 				treated_neighbors += assignment.at(partition[NI.GetOutNId(k)]);
 			}
 			if (is_additive) {
-				_node_response_obs.push_back(_node_response_0[i] + a * delta + treated_neighbors * gamma / NI.GetOutDeg()); 
+				_node_response_obs[i] = _node_response_0[i] + a * delta + treated_neighbors * gamma / NI.GetOutDeg(); 
 			} else {
-				_node_response_obs.push_back(_node_response_0[i] * (1 + a * delta + treated_neighbors * gamma / NI.GetOutDeg())); 
+				_node_response_obs[i] = _node_response_0[i] * (1 + a * delta + treated_neighbors * gamma / NI.GetOutDeg()); 
 			}
 		}		
 	}
@@ -752,24 +752,24 @@ class RGCR {
 			var_1 += variance_1i;
 			double variance_2i = 0;
 			for (int j = 0; j < i; j++) {
-				double prod_prob = expo_prob_i * _sum_expo_prob[vec_id][j];
+				double prod_prob = _sum_expo_prob[vec_id][i] * _sum_expo_prob[vec_id][j] / n_mix;
 				if (prod_prob > 0) {
 					double score = _sum_co_expo_prob_11[vec_id][i][j] / prod_prob;
 					variance_2i += 2 * (score - 1) * node_response_1[i] * node_response_1[j];
 				}
-				prod_prob = expo_prob_control_i * _sum_expo_prob_control[vec_id][j];
+				prod_prob = _sum_expo_prob_control[vec_id][i] * _sum_expo_prob_control[vec_id][j] / n_mix;
 				if (prod_prob > 0) {
-					score = _sum_co_expo_prob_00[vec_id][i][j] / prod_prob;
+					double score = _sum_co_expo_prob_00[vec_id][i][j] / prod_prob;
 					variance_2i += 2 * (score - 1) * node_response_0[i] * node_response_0[j];
 				}
-				prod_prob = expo_prob_i * _sum_expo_prob_control[vec_id][j];
+				prod_prob = _sum_expo_prob[vec_id][i] * _sum_expo_prob_control[vec_id][j] / n_mix;
 				if (prod_prob > 0) {
-					score = _sum_adv_expo_prob_10[vec_id][i][j] / prod_prob;
+					double score = _sum_adv_expo_prob_10[vec_id][i][j] / prod_prob;
 					variance_2i -= 2 * (score - 1) * node_response_1[i] * node_response_0[j];
 				}
-				prod_prob = expo_prob_control_i * _sum_expo_prob[vec_id][j];
+				prod_prob = _sum_expo_prob_control[vec_id][i] * _sum_expo_prob[vec_id][j] / n_mix;
 				if (prod_prob > 0) {
-					score = _sum_adv_expo_prob_01[vec_id][i][j] / prod_prob;
+					double score = _sum_adv_expo_prob_01[vec_id][i][j] / prod_prob;
 					variance_2i -= 2 * (score - 1) * node_response_0[i] * node_response_1[j];
 				}
 			}
@@ -820,7 +820,6 @@ class RGCR {
 		file_output.close();
 		}
 		#pragma omp section
-		{
 		{
 		std::string output_file_name = _output_file_directory + "expo_prob/" + _clustering_method + "-expo_control-" + file_suffix;
 		std::ofstream file_output(output_file_name);
@@ -888,7 +887,6 @@ class RGCR {
 		load_vec_from_file(_sum_expo_prob[0], file_prefix+"-expo-"+file_suffix, 0, 0, _mx_nid);
 		}
 		#pragma omp section
-		{
 		{
 		_sum_expo_prob_control = std::vector<VecFlt>(1);
 		load_vec_from_file(_sum_expo_prob_control[0], file_prefix+"-expo_control-"+file_suffix, 0, 0, _mx_nid);
@@ -1032,7 +1030,7 @@ class RGCR {
 	}
 
 	void simulate_Linear(const VecFlt& partition, double& hat_tau, std::unordered_map<double, int>& assignment, double treatment_prob=0.5) const {
-		hat_tau = 0
+		hat_tau = 0;
 		for (int i = 0; i < _mx_nid; i++) {
 			double weight_i = 0;
 			int a = assignment.at(partition[i]);
@@ -1042,7 +1040,7 @@ class RGCR {
 				a = assignment.at(partition[NI.GetOutNId(k)]);
 				weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
 			}
-			hat_tau += weight_i * _node_response_obs[i[]];
+			hat_tau += weight_i * _node_response_obs[i];
 		}
 		hat_tau = hat_tau / _mx_nid;
 	}
@@ -1064,10 +1062,10 @@ class RGCR {
 		{
 		#pragma omp for reduction (+:sum_bias,sum_SE,sum_QE)
 		for (int sample_i = 0; sample_i < n_samples; sample_i++) {
-			double hat_tau_1, hat_tau_2;
+			double hat_tau_1; //, hat_tau_2;
 			std::unordered_map<double, int> assignment;
-			assign_treatment_control(partition, use_complete_rand, assignment, treatment_prob);
-			load_obs_response(_delta, _gamma, false, assignment, partition)
+			assign_treatment_control(partition, false, assignment, treatment_prob);
+			load_obs_response(_delta, _gamma, false, assignment, partition);
 			if (est_type == HT) {
 				simulate_HT(partition, false, hat_tau_1, assignment);	// use_complete_rand=false
 			} else if (est_type == HAJEK) {

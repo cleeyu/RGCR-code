@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
   usage_msg += " -b drift_coef[0.5]";
   usage_msg += " -e noise_coef[0.1]";
   usage_msg += " -t GATE[1]";
+  usage_msg += " -f ratio of network effect to direct effect";
   usage_msg += " -m multiplicative_ATE[false]";
   usage_msg += " -o output_file_suffix[\"\"]";
 
@@ -31,12 +32,13 @@ int main(int argc, char **argv) {
   double b = 0.5;
   double e = 0.1;
   double GATE = 1.0;
+  double f = 0.5;
   bool additive_ATE = true;
   std::string output_file_suffix = "";
 
   extern char *optarg;
   int opt;
-  while ((opt = getopt(argc, argv, "g:c:s:rha:b:e:t:mo:")) != -1) {
+  while ((opt = getopt(argc, argv, "g:c:s:rha:b:e:t:f:mo:")) != -1) {
     switch (opt) {
       case 'g':
         path_graph_name = optarg;
@@ -65,6 +67,9 @@ int main(int argc, char **argv) {
       case 't':
         GATE = atof(optarg);
         break;
+      case 'f':
+        f = atof(optarg);
+        break;
       case 'm':
         additive_ATE = false;
         break;
@@ -90,13 +95,13 @@ int main(int argc, char **argv) {
   } else {
     run_name += ",multipli_TE,";
   }
-  run_name += std::to_string(GATE);
+  run_name += std::to_string(GATE) + ',' + std::to_string(f);
   std::cout << run_name << std::endl;
 
   std::cout << get_time_str() << ": Experiment starts..."<< std::endl;
   PUNGraph g = read_undirected_graph(DATA_PATH + path_graph_name);
   RGCR rgcr(g, path_graph_name, false);
-  rgcr.load_node_response(a, b, e, GATE, additive_ATE);
+  rgcr.load_node_response(a, b, e, GATE/(1+f), GATE*f/(1+f), additive_ATE);
 
   std::string output_file_name = "results/variances-" + est_type_str;
   if (output_file_suffix != "") {
