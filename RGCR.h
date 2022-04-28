@@ -1033,16 +1033,35 @@ class RGCR {
 	}
 
 	void simulate_Linear(const VecFlt& partition, double& hat_tau, std::unordered_map<double, int>& assignment, double treatment_prob=0.5) const {
+		// node_to_adjencent_clusters[u] is the set of clusters intersecting with B_1(i) of node i.
+		std::vector<std::unordered_set<double>> node_to_adjencent_clusters(_mx_nid);
+		for (int i = 0; i < _mx_nid; i++) {
+			node_to_adjencent_clusters[i].insert(partition[i]);
+			TUNGraph::TNodeI NI = _g->GetNI(i);
+			for (int d = 0; d < NI.GetOutDeg(); d++) {
+				int j = NI.GetOutNId(d);
+				node_to_adjencent_clusters[i].insert(partition[j]);
+			}
+		}
+
 		hat_tau = 0;
 		for (int i = 0; i < _mx_nid; i++) {
 			double weight_i = 0;
-			int a = int(assignment.at(partition[i]));
-			weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
-			TUNGraph::TNodeI NI = _g->GetNI(i);
-			for (int k = 0; k < NI.GetOutDeg(); k++) {
-				a = int(assignment.at(partition[NI.GetOutNId(k)]));
+			
+			for (double cluster_id : node_to_adjencent_clusters[i]) {
+				int a = assignment.at(cluster_id);
 				weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
 			}
+
+			// // If bernoulli RD without clusters
+			// int a = int(assignment.at(partition[i]));
+			// weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
+			// TUNGraph::TNodeI NI = _g->GetNI(i);
+			// for (int k = 0; k < NI.GetOutDeg(); k++) {
+			// 	a = int(assignment.at(partition[NI.GetOutNId(k)]));
+			// 	weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
+			// }
+
 			hat_tau += weight_i * _node_response_obs[i];
 		}
 		hat_tau = hat_tau / _mx_nid;
