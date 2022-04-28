@@ -334,6 +334,8 @@ class RGCR {
 
 		_node_response_0.clear();
 		_node_response_0.reserve(_mx_nid);
+		_node_response_obs.clear();
+		_node_response_obs.reserve(_mx_nid);
 		double min_response = a;
 		for (int i = 0; i < _mx_nid; i++) {
 			double response = a;
@@ -359,6 +361,10 @@ class RGCR {
 			}
 		}
 		_mu0 = std::accumulate(_node_response_0.begin(), _node_response_0.end(), 0.0) / _mx_nid;
+
+		for (int i = 0; i < _mx_nid; i++) {
+			_node_response_obs.push_back(_node_response_0[i]);
+		}
 	}
 
 	void load_treatment_response(double tau, bool is_additive) {
@@ -378,9 +384,6 @@ class RGCR {
 	}
 
 	void load_obs_response(double delta, double gamma, bool is_additive, std::unordered_map<double, int>& assignment, const VecFlt& partition) {
-		_node_response_obs.clear();
-		_node_response_obs.reserve(_mx_nid);
-
 		for (int i = 0; i < _mx_nid; i++) {
 			int a = assignment.at(partition[i]);
 			int treated_neighbors = 0;
@@ -975,10 +978,10 @@ class RGCR {
 				if (a) {
 					sum_inv_prob_1 += 1 / _sum_expo_prob[0][i];
 					sum_inv_prob_response_1_1 += _node_response_1[i] / _sum_expo_prob[0][i];
-					// sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i];
+					// sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob_control[0][i];
 				} else {
-					sum_inv_prob_0 += 1 / _sum_expo_prob[0][i];
-					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob[0][i];
+					sum_inv_prob_0 += 1 / _sum_expo_prob_control[0][i];
+					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob_control[0][i];
 					// sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i];
 				}
 			}
@@ -1014,9 +1017,9 @@ class RGCR {
 			if (exposed) {
 				if (a) {
 					sum_inv_prob_response_1_1 += _node_response_1[i] / _sum_expo_prob[0][i];
-					// sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob[0][i];
+					// sum_inv_prob_response_0_2 += _node_response_0[i] / _sum_expo_prob_control[0][i];
 				} else {
-					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob[0][i];
+					sum_inv_prob_response_0_1 += _node_response_0[i] / _sum_expo_prob_control[0][i];
 					// sum_inv_prob_response_1_2 += _node_response_1[i] / _sum_expo_prob[0][i];
 				}
 			}
@@ -1033,11 +1036,11 @@ class RGCR {
 		hat_tau = 0;
 		for (int i = 0; i < _mx_nid; i++) {
 			double weight_i = 0;
-			int a = assignment.at(partition[i]);
+			int a = int(assignment.at(partition[i]));
 			weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
 			TUNGraph::TNodeI NI = _g->GetNI(i);
 			for (int k = 0; k < NI.GetOutDeg(); k++) {
-				a = assignment.at(partition[NI.GetOutNId(k)]);
+				a = int(assignment.at(partition[NI.GetOutNId(k)]));
 				weight_i += a/treatment_prob - (1-a)/(1-treatment_prob);
 			}
 			hat_tau += weight_i * _node_response_obs[i];
@@ -1065,12 +1068,12 @@ class RGCR {
 			double hat_tau_1; //, hat_tau_2;
 			std::unordered_map<double, int> assignment;
 			assign_treatment_control(partition, false, assignment, treatment_prob);
-			load_obs_response(_delta, _gamma, false, assignment, partition);
 			if (est_type == HT) {
 				simulate_HT(partition, false, hat_tau_1, assignment);	// use_complete_rand=false
 			} else if (est_type == HAJEK) {
 				simulate_Hajek(partition, false, hat_tau_1, assignment);	// use_complete_rand=false
 			} else {
+				load_obs_response(_delta, _gamma, false, assignment, partition);
 				simulate_Linear(partition, hat_tau_1, assignment, treatment_prob);
 			}
 			sum_bias += hat_tau_1  - tau_gt; // + hat_tau_2 - tau_gt;
