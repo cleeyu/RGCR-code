@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
   usage_msg += " -i run_id[0]";
   usage_msg += " -t(if using complete randomization [false])";
   usage_msg += " -s(if using stratified clustering sampling [false])";
+  usage_msg += " -z treatment_prob";
 
   // Default run parameters.
   std::string path_graph_name = "SW32";
@@ -23,10 +24,11 @@ int main(int argc, char **argv) {
   int run_id = 0;
   bool use_complete_randomization = false;
   bool use_stratified_sampling = false;
+  int treatment_prob = 0.5;
 
   extern char *optarg;
   int opt;
-  while ((opt = getopt(argc, argv, "g:c:w:n:i:tsp:")) != -1) {
+  while ((opt = getopt(argc, argv, "g:c:w:n:i:tsp:z:")) != -1) {
     switch (opt) {
       case 'g':
         path_graph_name = optarg;
@@ -51,6 +53,9 @@ int main(int argc, char **argv) {
         break;
       case 'p':
         N_THREADS = atoi(optarg);
+        break;
+      case 'z':
+        treatment_prob = atoi(optarg);
         break;
       default:
         std::cout << usage_msg << std::endl;
@@ -78,9 +83,9 @@ int main(int argc, char **argv) {
   RandomClustering random_clustering(g, path_graph_name, clustering_method, clustering_node_w_opt);
 
   if (use_stratified_sampling) {
-    rgcr.stratified_mixing_analysis(random_clustering, n_samples, use_complete_randomization, run_id);
+    rgcr.stratified_mixing_analysis(random_clustering, n_samples, use_complete_randomization, run_id, treatment_prob);
   } else {
-    rgcr.independent_mixing_analysis(random_clustering, n_samples, use_complete_randomization, run_id);
+    rgcr.independent_mixing_analysis(random_clustering, n_samples, use_complete_randomization, run_id, treatment_prob);
   }
 
   std::cout << get_time_str() << ": Experiment finishes..."<< std::endl;
